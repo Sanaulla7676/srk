@@ -17,6 +17,36 @@ export const CLOUDINARY_CONFIG = {
 };
 
 /**
+ * Downscales an image file to a max dimension and re-encodes it as a
+ * compressed JPEG data URL. Phone camera photos are routinely 3-8MB;
+ * stored raw as base64 that blows past the ~5-10MB per-origin
+ * localStorage quota after just one or two uploads. This keeps the
+ * fallback path (used whenever Cloudinary isn't configured) safely
+ * small, typically under 200KB.
+ */
+function compressImageToDataUrl(file, maxDimension = 1000, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Could not read the selected image.'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+/**
  * Uploads a file (image or video) directly to Cloudinary or returns local DataURL fallback
  * @param {File} file - File object selected from file input or camera
  * @param {Function} onProgress - Progress callback function (0 - 100%)
@@ -67,7 +97,17 @@ export async function uploadMediaToCloudinary(file, onProgress = () => {}) {
     console.warn("Cloudinary direct network upload failed or unconfigured, using instant device data preview.", err);
   }
 
-  // Fallback: Read local file as DataURL so phone camera/gallery selection works instantly offline
+  // Fallback: images are downscaled + compressed to stay well under the
+  // localStorage quota; videos (which can't be canvas-compressed) fall
+  // back to a raw DataURL read so phone camera/gallery selection still
+  // works instantly offline.
+  if (!isVideo) {
+    onProgress(50);
+    const dataUrl = await compressImageToDataUrl(file);
+    onProgress(100);
+    return { url: dataUrl, type: mediaType, public_id: `local_${Date.now()}` };
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onprogress = (e) => {

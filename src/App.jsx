@@ -122,9 +122,21 @@ export default function App({ mode = 'storefront' }) {
   ]);
 
   // LocalStorage Sync
-  useEffect(() => { localStorage.setItem('shrirk_products', JSON.stringify(products)); }, [products]);
-  useEffect(() => { localStorage.setItem('shrirk_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('shrirk_slides', JSON.stringify(slides)); }, [slides]);
+  // Wrapped in try/catch because uploaded photos can fall back to large
+  // base64 strings (see cloudinary.js) when no real Cloudinary account is
+  // configured; without this guard a full localStorage quota silently
+  // drops the save and the new item vanishes on the next page load.
+  const safeSetItem = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (err) {
+      console.error(`Failed to save '${key}' to localStorage`, err);
+      showToast("Couldn't save — storage is full. Use a smaller photo or connect Cloudinary in Settings.");
+    }
+  };
+  useEffect(() => { safeSetItem('shrirk_products', JSON.stringify(products)); }, [products]);
+  useEffect(() => { safeSetItem('shrirk_categories', JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { safeSetItem('shrirk_slides', JSON.stringify(slides)); }, [slides]);
   useEffect(() => { localStorage.setItem('shrirk_orders', JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem('shrirk_coupons', JSON.stringify(coupons)); }, [coupons]);
   useEffect(() => { localStorage.setItem('shrirk_addresses', JSON.stringify(addresses)); }, [addresses]);
@@ -442,48 +454,52 @@ export default function App({ mode = 'storefront' }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-darkBg text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans antialiased selection:bg-brandPink selection:text-white">
-      {/* FLASH SALE LIVE COUNTDOWN HEADER BAR */}
-      <FlashSaleHeader timeLeft={timeLeft} lang={lang} setLanguage={setLanguage} />
+      {mode !== 'admin' && (
+        <>
+          {/* FLASH SALE LIVE COUNTDOWN HEADER BAR */}
+          <FlashSaleHeader timeLeft={timeLeft} lang={lang} setLanguage={setLanguage} />
 
-      {/* ABANDONED CART RECOVERY BANNER */}
-      {cart.length > 0 && (
-        <div className="bg-rkCreamSoft border-b border-rkGold/40 px-4 py-1.5 text-xs text-center font-rkSans font-medium text-rkInk flex justify-center items-center gap-2">
-          <i className="fa-solid fa-clock text-rkGold"></i>
-          <span>You left items in your Bag! Complete order now for EXTRA 5% OFF!</span>
-          <button onClick={() => setIsCartOpen(true)} className="underline font-semibold ml-2">
-            Checkout Bag
-          </button>
-        </div>
+          {/* ABANDONED CART RECOVERY BANNER */}
+          {cart.length > 0 && (
+            <div className="bg-rkCreamSoft border-b border-rkGold/40 px-4 py-1.5 text-xs text-center font-rkSans font-medium text-rkInk flex justify-center items-center gap-2">
+              <i className="fa-solid fa-clock text-rkGold"></i>
+              <span>You left items in your Bag! Complete order now for EXTRA 5% OFF!</span>
+              <button onClick={() => setIsCartOpen(true)} className="underline font-semibold ml-2">
+                Checkout Bag
+              </button>
+            </div>
+          )}
+
+          {/* MAIN HEADER */}
+          <Header
+            view={view}
+            setView={setView}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            handleVoiceSearch={handleVoiceSearch}
+            isVoiceListening={isVoiceListening}
+            setIsStylistOpen={setIsStylistOpen}
+            currency={currency}
+            setCurrency={setCurrency}
+            isDarkMode={isDarkMode}
+            setIsDarkMode={setIsDarkMode}
+            loyaltyTier={loyaltyTier}
+            insiderPoints={insiderPoints}
+            setIsSpinWheelOpen={setIsSpinWheelOpen}
+            setIsProfileOpen={setIsProfileOpen}
+            isAdminLoggedIn={isAdminLoggedIn}
+            setIsLoginOpen={setIsLoginOpen}
+            wishlist={wishlist}
+            setIsWishlistOpen={setIsWishlistOpen}
+            cart={cart}
+            setIsCartOpen={setIsCartOpen}
+            setSortBy={setSortBy}
+            lang={lang}
+          />
+        </>
       )}
-
-      {/* MAIN HEADER */}
-      <Header
-        view={view}
-        setView={setView}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleVoiceSearch={handleVoiceSearch}
-        isVoiceListening={isVoiceListening}
-        setIsStylistOpen={setIsStylistOpen}
-        currency={currency}
-        setCurrency={setCurrency}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
-        loyaltyTier={loyaltyTier}
-        insiderPoints={insiderPoints}
-        setIsSpinWheelOpen={setIsSpinWheelOpen}
-        setIsProfileOpen={setIsProfileOpen}
-        isAdminLoggedIn={isAdminLoggedIn}
-        setIsLoginOpen={setIsLoginOpen}
-        wishlist={wishlist}
-        setIsWishlistOpen={setIsWishlistOpen}
-        cart={cart}
-        setIsCartOpen={setIsCartOpen}
-        setSortBy={setSortBy}
-        lang={lang}
-      />
 
       {/* MAIN CONTENT VIEW */}
       {mode === 'admin' ? (
@@ -608,7 +624,7 @@ export default function App({ mode = 'storefront' }) {
       )}
 
       {/* FOOTER */}
-      <Footer setView={setView} setSelectedCategory={setSelectedCategory} />
+      {mode !== 'admin' && <Footer setView={setView} setSelectedCategory={setSelectedCategory} />}
 
       {/* MODALS & DRAWERS */}
       <CompareModal
