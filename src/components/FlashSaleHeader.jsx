@@ -2,31 +2,27 @@ import React from 'react';
 
 export default function FlashSaleHeader({ timeLeft, lang, setLanguage }) {
   return (
-    <div className="bg-gray-900 text-brandGold text-center py-1.5 px-4 text-xs font-bold flex flex-wrap justify-between items-center border-b border-brandGold gap-2">
-      <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-gray-300 font-semibold">
-        <i className="fa-solid fa-location-dot text-brandPink"></i>
-        <span>Mahalakshmipuram, Bengaluru</span>
-      </div>
-      <div className="flex items-center gap-2 mx-auto">
-        <span className="bg-brandPink text-white px-2 py-0.5 rounded text-[10px] uppercase font-black animate-pulse">
-          FLASH SALE ENDS IN:
-        </span>
-        <span className="font-mono text-white tracking-widest font-black">
-          {String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s
-        </span>
-        <span className="hidden sm:inline">
-          • Code: <span className="border border-dashed border-brandGold bg-brandGold/20 px-2 py-0.5 rounded text-white">SHRIRK200</span>
-        </span>
-      </div>
+    <div className="bg-rkNight text-white text-center py-2 px-4 text-[11px] font-rkSans font-medium flex flex-wrap justify-center items-center gap-2 relative">
+      <span className="flex items-center gap-1.5">
+        <i className="fa-solid fa-truck-fast text-rkTan"></i>
+        Free shipping on orders above ₹999
+      </span>
+      <span className="text-white/30 hidden sm:inline">|</span>
+      <span className="flex items-center gap-1.5">
+        <i className="fa-solid fa-gift text-rkTan"></i>
+        10% off on your first order &ndash; use code&nbsp;
+        <span className="font-bold text-rkTan">WELCOME10</span>
+      </span>
+
       <select
         value={lang}
         onChange={(e) => setLanguage(e.target.value)}
-        className="bg-gray-800 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-gray-700 outline-none cursor-pointer"
+        className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 bg-transparent text-white/50 text-[10px] font-medium px-2 py-0.5 rounded border border-white/15 outline-none cursor-pointer"
       >
-        <option value="EN">English</option>
-        <option value="HI">हिन्दी (Hindi)</option>
-        <option value="MR">मराठी (Marathi)</option>
-        <option value="GU">ગુજરાતી (Gujarati)</option>
+        <option value="EN" className="text-rkInk">English</option>
+        <option value="HI" className="text-rkInk">हिन्दी (Hindi)</option>
+        <option value="MR" className="text-rkInk">मराठी (Marathi)</option>
+        <option value="GU" className="text-rkInk">ગુજરાતી (Gujarati)</option>
       </select>
     </div>
   );

@@ -2,16 +2,16 @@ import React from 'react';
 
 export default function StoreControlBar({ itemCount, sortBy, setSortBy }) {
   return (
-    <div className="px-4 lg:px-10 py-3 border-y border-gray-200 dark:border-darkBorder flex justify-between items-center text-xs">
-      <span className="text-gray-500">
-        Showing <strong className="text-gray-900 dark:text-white">{itemCount}</strong> items
+    <div className="flex justify-between items-center text-[11px] font-rkSans text-rkInkSoft border-t border-rkLine pt-3">
+      <span>
+        Showing <strong className="text-rkInk">{itemCount}</strong> pieces
       </span>
       <div className="flex items-center gap-2">
-        <label className="font-bold text-gray-600 dark:text-gray-400">Sort by:</label>
+        <label className="uppercase tracking-widest">Sort</label>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 font-bold px-3 py-1.5 rounded outline-none cursor-pointer"
+          className="bg-transparent border-b border-rkLine focus:border-rkInk px-1 py-1 outline-none cursor-pointer text-rkInk"
         >
           <option value="recommended">Recommended</option>
           <option value="price-low">Price: Low to High</option>

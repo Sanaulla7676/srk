@@ -16,9 +16,9 @@ export default function FilterSidebar({
   lang
 }) {
   return (
-    <aside className="w-56 flex-shrink-0 hidden md:block">
-      <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200 dark:border-darkBorder">
-        <h3 className="text-xs font-extrabold uppercase tracking-wider">
+    <aside className="w-56 flex-shrink-0 hidden md:block font-rkSans text-rkInk">
+      <div className="flex justify-between items-center mb-5 pb-3 border-b border-rkLine">
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.2em] text-rkInkSoft">
           {TRANSLATIONS[lang]?.filterTitle || TRANSLATIONS.EN.filterTitle}
         </h3>
         <button
@@ -28,24 +28,24 @@ export default function FilterSidebar({
             setMaxPrice(10000);
             setMinRatingFour(false);
           }}
-          className="text-[11px] font-bold text-brandPink hover:underline"
+          className="text-[10px] font-medium text-rkGold hover:underline"
         >
-          CLEAR ALL
+          Clear All
         </button>
       </div>
 
-      <div className="mb-6">
-        <h4 className="text-xs font-bold uppercase mb-2 text-gray-700 dark:text-gray-300">Categories</h4>
-        <div className="space-y-1.5 text-xs">
+      <div className="mb-7">
+        <h4 className="text-[11px] font-medium uppercase tracking-widest mb-3 text-rkInkSoft">Categories</h4>
+        <div className="space-y-2 text-xs">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
               name="category"
               checked={selectedCategory === 'All'}
               onChange={() => setSelectedCategory('All')}
-              className="accent-brandPink"
+              className="accent-rkInk"
             />
-            <span>All Kids Wear</span>
+            <span>All Collections</span>
           </label>
           {categories.map((c) => (
             <label key={c.id} className="flex items-center gap-2 cursor-pointer">
@@ -54,7 +54,7 @@ export default function FilterSidebar({
                 name="category"
                 checked={selectedCategory === c.name}
                 onChange={() => setSelectedCategory(c.name)}
-                className="accent-brandPink"
+                className="accent-rkInk"
               />
               <span>{c.name}</span>
             </label>
@@ -62,9 +62,9 @@ export default function FilterSidebar({
         </div>
       </div>
 
-      <div className="mb-6">
-        <h4 className="text-xs font-bold uppercase mb-2 text-gray-700 dark:text-gray-300">Brands</h4>
-        <div className="max-h-40 overflow-y-auto space-y-1.5 text-xs custom-scrollbar">
+      <div className="mb-7">
+        <h4 className="text-[11px] font-medium uppercase tracking-widest mb-3 text-rkInkSoft">Brands</h4>
+        <div className="max-h-40 overflow-y-auto space-y-2 text-xs custom-scrollbar">
           {uniqueBrands.map((b) => (
             <label key={b} className="flex items-center gap-2 cursor-pointer">
               <input
@@ -74,7 +74,7 @@ export default function FilterSidebar({
                   if (e.target.checked) setSelectedBrands([...selectedBrands, b]);
                   else setSelectedBrands(selectedBrands.filter((brand) => brand !== b));
                 }}
-                className="accent-brandPink"
+                className="accent-rkInk"
               />
               <span>{b}</span>
             </label>
@@ -82,8 +82,8 @@ export default function FilterSidebar({
         </div>
       </div>
 
-      <div className="mb-6">
-        <h4 className="text-xs font-bold uppercase mb-2 text-gray-700 dark:text-gray-300">
+      <div className="mb-7">
+        <h4 className="text-[11px] font-medium uppercase tracking-widest mb-3 text-rkInkSoft">
           Max Price ({formatPrice(maxPrice)})
         </h4>
         <input
@@ -93,20 +93,20 @@ export default function FilterSidebar({
           step="250"
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
-          className="w-full accent-brandPink cursor-pointer"
+          className="w-full accent-rkInk cursor-pointer"
         />
       </div>
 
       <div>
-        <h4 className="text-xs font-bold uppercase mb-2 text-gray-700 dark:text-gray-300">Rating</h4>
+        <h4 className="text-[11px] font-medium uppercase tracking-widest mb-3 text-rkInkSoft">Rating</h4>
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input
             type="checkbox"
             checked={minRatingFour}
             onChange={(e) => setMinRatingFour(e.target.checked)}
-            className="accent-brandPink"
+            className="accent-rkInk"
           />
-          <span>4.0★ & Above</span>
+          <span>4.0★ &amp; Above</span>
         </label>
       </div>
     </aside>

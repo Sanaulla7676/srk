@@ -25,146 +25,196 @@ export default function Header({
   setIsWishlistOpen,
   cart,
   setIsCartOpen,
+  setSortBy,
   lang
 }) {
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  const navItems = [
+    { label: 'Shop', category: 'All' },
+    { label: 'Women', category: 'Girls Ethnic Wear' },
+    { label: 'Kids', category: 'Girls Dresses' },
+    { label: 'New Arrivals', category: 'All', sort: 'recommended' },
+    { label: 'Sale', category: 'All', sort: 'discount', badge: true }
+  ];
+
+  const goTo = (item) => {
+    setSelectedCategory(item.category);
+    if (item.sort) setSortBy(item.sort);
+    setView('storefront');
+    setMenuOpen(false);
+    document.getElementById('rk-collections')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-darkCard border-b border-gray-200 dark:border-darkBorder shadow-sm px-4 lg:px-10 h-20 flex items-center justify-between">
-      <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-40 bg-rkCream/95 backdrop-blur-sm border-b border-rkLine font-rkSans text-rkInk">
+      {/* Utility row: everything the storefront already offered, restyled minimal */}
+      <div className="hidden lg:flex items-center justify-end gap-4 px-6 lg:px-10 h-7 text-[10px] uppercase tracking-widest border-b border-rkLine/70 text-rkInkSoft">
+        <button
+          onClick={() => setIsStylistOpen(true)}
+          className="flex items-center gap-1.5 hover:text-rkInk transition-colors"
+        >
+          <i className="fa-solid fa-wand-magic-sparkles"></i>
+          <span>AI Stylist</span>
+        </button>
+        <button
+          onClick={() => setIsSpinWheelOpen(true)}
+          className="flex items-center gap-1.5 hover:text-rkInk transition-colors"
+        >
+          <i className="fa-solid fa-dharmachakra"></i>
+          <span>Spin &amp; Win</span>
+        </button>
         <div
-          className="font-serif text-xl font-extrabold cursor-pointer flex items-center gap-2"
+          onClick={() => setIsProfileOpen(true)}
+          className="flex items-center gap-1.5 cursor-pointer hover:text-rkInk transition-colors"
+        >
+          <i className={`fa-solid ${loyaltyTier.icon}`}></i>
+          <span>{insiderPoints} Pts &middot; {loyaltyTier.name}</span>
+        </div>
+        <select
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className="bg-transparent outline-none cursor-pointer tracking-widest"
+        >
+          {Object.keys(CURRENCIES).map((curr) => (
+            <option key={curr} value={curr}>{curr}</option>
+          ))}
+        </select>
+        <button onClick={() => setIsDarkMode(!isDarkMode)} className="hover:text-rkInk transition-colors">
+          <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+        </button>
+        {!isAdminLoggedIn && (
+          <button onClick={() => setIsLoginOpen(true)} className="hover:text-rkInk transition-colors">
+            Admin Login
+          </button>
+        )}
+      </div>
+
+      {/* Main nav row */}
+      <div className="px-5 lg:px-10 h-14 flex items-center justify-between gap-4">
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className="w-8 h-8 rounded-full border border-rkLine flex items-center justify-center hover:border-rkInk transition-colors lg:mr-1"
+          aria-label="Menu"
+        >
+          <i className="fa-solid fa-bars text-xs"></i>
+        </button>
+
+        {/* Logo lockup: script "Shri" + serif "RK" + tracked "FASHIONS" */}
+        <div
+          className="flex items-center gap-1.5 cursor-pointer shrink-0 mr-auto lg:mr-0"
           onClick={() => setView('storefront')}
         >
-          <span className="bg-gradient-to-r from-brandGold to-brandPink text-white px-2.5 py-1 rounded text-sm font-sans font-black shadow-sm">
-            SRK
-          </span>
-          <span>
-            Shri R.K. <span className="text-brandPink">Fashions</span>
+          <span className="font-serif text-xl font-black tracking-tight leading-none">RK</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-rkScript text-sm text-rkGold leading-none">Shri</span>
+            <span className="text-[7px] font-rkSans font-medium tracking-[0.3em] uppercase leading-none mt-0.5">Fashions</span>
           </span>
         </div>
-        <nav className="hidden lg:flex items-center gap-1 h-full">
-          {['All', 'Girls Dresses', 'Boys T-Shirts', 'Girls Ethnic Wear', 'Boys Shirts'].map((cat) => (
+
+        <nav className="hidden lg:flex items-center gap-7 text-[11px] font-medium tracking-[0.18em] uppercase">
+          {navItems.map((item) => (
             <button
-              key={cat}
-              onClick={() => {
-                setSelectedCategory(cat);
-                setView('storefront');
-              }}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${
-                selectedCategory === cat && view === 'storefront'
-                  ? 'border-brandPink text-brandPink'
-                  : 'border-transparent hover:text-brandPink'
+              key={item.label}
+              onClick={() => goTo(item)}
+              className={`pb-1 border-b transition-all flex items-center gap-1.5 ${
+                selectedCategory === item.category && view === 'storefront'
+                  ? 'border-rkGold text-rkInk'
+                  : 'border-transparent text-rkInkSoft hover:text-rkInk hover:border-rkInk/40'
               }`}
             >
-              {cat}
+              <span>{item.label}</span>
+              {item.badge && (
+                <span className="bg-rkGold/20 text-rkGold text-[9px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal">
+                  Sale
+                </span>
+              )}
             </button>
           ))}
         </nav>
-      </div>
 
-      {/* Search Bar with Voice */}
-      <div className="relative flex-1 max-w-md mx-4">
-        <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 border border-transparent focus-within:border-brandPink transition-all">
-          <i className="fa-solid fa-magnifying-glass text-gray-400 mr-2"></i>
-          <input
-            type="text"
-            placeholder={TRANSLATIONS[lang]?.searchPlaceholder || TRANSLATIONS.EN.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent text-xs w-full outline-none dark:text-white"
-          />
+        <div className="flex items-center gap-4 sm:gap-5">
+          {/* Search: icon toggles an inline field, keeps voice search */}
+          <div className="relative flex items-center">
+            {searchOpen && (
+              <div className="absolute right-9 top-1/2 -translate-y-1/2 flex items-center bg-rkCreamSoft border border-rkLine rounded-full pl-3 pr-1 py-1 shadow-sm w-52 sm:w-64">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder={TRANSLATIONS[lang]?.searchPlaceholder || TRANSLATIONS.EN.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent text-xs w-full outline-none"
+                />
+                <button
+                  onClick={handleVoiceSearch}
+                  title="Voice Search"
+                  className={`ml-1 w-6 h-6 rounded-full flex items-center justify-center text-[11px] shrink-0 ${
+                    isVoiceListening ? 'text-rkGold animate-pulse' : 'text-rkInkSoft hover:text-rkInk'
+                  }`}
+                >
+                  <i className="fa-solid fa-microphone"></i>
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              className="w-8 h-8 rounded-full border border-rkLine flex items-center justify-center hover:border-rkInk transition-colors"
+              aria-label="Search"
+            >
+              <i className="fa-solid fa-magnifying-glass text-sm"></i>
+            </button>
+          </div>
+
           <button
-            onClick={handleVoiceSearch}
-            title="Voice Search"
-            className={`ml-2 text-xs transition-colors ${
-              isVoiceListening
-                ? 'text-brandPink animate-pulse'
-                : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-            }`}
+            onClick={() => setIsProfileOpen(true)}
+            className="w-8 h-8 rounded-full border border-rkLine flex items-center justify-center hover:border-rkInk transition-colors"
+            aria-label="Profile"
           >
-            <i className="fa-solid fa-microphone"></i>
+            <i className="fa-regular fa-user text-sm"></i>
+          </button>
+
+          <button
+            onClick={() => setIsWishlistOpen(true)}
+            className="relative w-8 h-8 rounded-full border border-rkLine flex items-center justify-center hover:border-rkInk transition-colors"
+            aria-label="Wishlist"
+          >
+            <i className="fa-regular fa-heart text-sm"></i>
+            {wishlist.size > 0 && (
+              <span className="absolute -top-1 -right-1 bg-rkInk text-rkCream text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {wishlist.size}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="relative w-8 h-8 rounded-full border border-rkLine flex items-center justify-center hover:border-rkInk transition-colors"
+            aria-label="Bag"
+          >
+            <i className="fa-solid fa-bag-shopping text-sm"></i>
+            <span className="absolute -top-1 -right-1 bg-rkInk text-rkCream text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {cart.reduce((s, i) => s + i.qty, 0)}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* Header Actions */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setIsStylistOpen(true)}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow hover:scale-105 transition-transform"
-        >
-          <i className="fa-solid fa-wand-magic-sparkles"></i>
-          <span className="hidden sm:inline">AI Stylist</span>
-        </button>
-
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs font-bold px-2 py-1.5 rounded cursor-pointer outline-none"
-        >
-          {Object.keys(CURRENCIES).map((curr) => (
-            <option key={curr} value={curr}>
-              {curr}
-            </option>
+      {menuOpen && (
+        <div className="lg:hidden border-t border-rkLine bg-rkCream px-5 py-4 flex flex-col gap-1 text-xs font-medium tracking-wide uppercase">
+          {navItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => goTo(item)}
+              className="flex items-center justify-between py-2.5 border-b border-rkLine/60 text-left"
+            >
+              <span>{item.label}</span>
+              {item.badge && <span className="text-rkGold">Sale</span>}
+            </button>
           ))}
-        </select>
-
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs hover:scale-105 transition-all"
-        >
-          <i className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon text-gray-700'}`}></i>
-        </button>
-
-        <div
-          onClick={() => setIsProfileOpen(true)}
-          className="bg-gray-900 border border-brandGold text-brandGold px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 cursor-pointer shadow-sm"
-        >
-          <i className={`fa-solid ${loyaltyTier.icon} ${loyaltyTier.color}`}></i>
-          <span>{insiderPoints} Pts</span>
         </div>
-
-        <button
-          onClick={() => setIsSpinWheelOpen(true)}
-          className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 border border-amber-300 flex items-center justify-center text-xs animate-spin-slow"
-          title="Spin & Win Coupons"
-        >
-          <i className="fa-solid fa-dharmachakra"></i>
-        </button>
-
-        <button
-          onClick={() => setIsProfileOpen(true)}
-          className="flex flex-col items-center text-[10px] font-bold text-gray-700 dark:text-gray-300"
-        >
-          <i className="fa-regular fa-user text-sm mb-0.5"></i>
-          <span>Profile</span>
-        </button>
-
-        <button
-          onClick={() => setIsWishlistOpen(true)}
-          className="relative flex flex-col items-center text-[10px] font-bold text-gray-700 dark:text-gray-300"
-        >
-          <i className="fa-regular fa-heart text-sm mb-0.5"></i>
-          <span>Wishlist</span>
-          {wishlist.size > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-brandPink text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-              {wishlist.size}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="relative flex flex-col items-center text-[10px] font-bold text-gray-700 dark:text-gray-300"
-        >
-          <i className="fa-solid fa-bag-shopping text-sm mb-0.5"></i>
-          <span>Bag</span>
-          {cart.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-brandPink text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-              {cart.reduce((s, i) => s + i.qty, 0)}
-            </span>
-          )}
-        </button>
-      </div>
+      )}
     </header>
   );
 }

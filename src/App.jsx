@@ -14,10 +14,17 @@ import {
 import FlashSaleHeader from './components/FlashSaleHeader';
 import Header from './components/Header';
 import HeroBanner from './components/HeroBanner';
+import HeroFeatureStrip from './components/HeroFeatureStrip';
+import NewCollectionStack from './components/NewCollectionStack';
+import CategoryShowcaseDark from './components/CategoryShowcaseDark';
+import PromoCountdown from './components/PromoCountdown';
+import DuoShowcase from './components/DuoShowcase';
 import CategoryScroll from './components/CategoryScroll';
 import StoreControlBar from './components/StoreControlBar';
 import FilterSidebar from './components/FilterSidebar';
 import ProductGrid from './components/ProductGrid';
+import TrustBadges from './components/TrustBadges';
+import ScrambleText from './components/ScrambleText';
 import RecentlyViewedStrip from './components/RecentlyViewedStrip';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
@@ -440,10 +447,10 @@ export default function App({ mode = 'storefront' }) {
 
       {/* ABANDONED CART RECOVERY BANNER */}
       {cart.length > 0 && (
-        <div className="bg-pink-100 dark:bg-pink-950/60 border-b border-pink-300 dark:border-pink-800 px-4 py-1.5 text-xs text-center font-bold text-brandPink flex justify-center items-center gap-2">
-          <i className="fa-solid fa-clock"></i>
+        <div className="bg-rkCreamSoft border-b border-rkGold/40 px-4 py-1.5 text-xs text-center font-rkSans font-medium text-rkInk flex justify-center items-center gap-2">
+          <i className="fa-solid fa-clock text-rkGold"></i>
           <span>You left items in your Bag! Complete order now for EXTRA 5% OFF!</span>
-          <button onClick={() => setIsCartOpen(true)} className="underline font-black text-gray-900 dark:text-white ml-2">
+          <button onClick={() => setIsCartOpen(true)} className="underline font-semibold ml-2">
             Checkout Bag
           </button>
         </div>
@@ -474,6 +481,7 @@ export default function App({ mode = 'storefront' }) {
         setIsWishlistOpen={setIsWishlistOpen}
         cart={cart}
         setIsCartOpen={setIsCartOpen}
+        setSortBy={setSortBy}
         lang={lang}
       />
 
@@ -516,48 +524,74 @@ export default function App({ mode = 'storefront' }) {
             setSelectedCategory={setSelectedCategory}
           />
 
-          {/* CATEGORY SCROLL */}
-          <CategoryScroll
+          {/* FREE SHIPPING / QUALITY / RETURNS / SUPPORT */}
+          <HeroFeatureStrip />
+
+          {/* NEW COLLECTION: scroll-driven stacked card carousel */}
+          <NewCollectionStack setSelectedCategory={setSelectedCategory} setView={setView} />
+
+          {/* SHOP BY CATEGORY */}
+          <CategoryShowcaseDark setSelectedCategory={setSelectedCategory} setView={setView} />
+
+          {/* LIMITED TIME OFFER COUNTDOWN */}
+          <PromoCountdown setSelectedCategory={setSelectedCategory} setView={setView} />
+
+          {/* DUO SHOWCASE */}
+          <DuoShowcase
             categories={categories}
-            selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
-            lang={lang}
+            setView={setView}
           />
 
-          {/* STORE CONTROL BAR */}
-          <StoreControlBar
-            itemCount={filteredProducts.length}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-          />
+          {/* COLLECTIONS: tabs, filters & grid */}
+          <div id="rk-collections" className="bg-rkCream px-4 lg:px-10 py-16 lg:py-20">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="font-serif text-4xl sm:text-5xl font-bold text-rkInk text-center mb-8">
+                <ScrambleText text="What You'll Love" duration={700} />
+              </h2>
 
-          {/* MAIN PRODUCTS GRID & SIDEBAR */}
-          <div className="px-4 lg:px-10 py-6 flex gap-8">
-            <FilterSidebar
-              categories={categories}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              uniqueBrands={uniqueBrands}
-              selectedBrands={selectedBrands}
-              setSelectedBrands={setSelectedBrands}
-              maxPrice={maxPrice}
-              setMaxPrice={setMaxPrice}
-              minRatingFour={minRatingFour}
-              setMinRatingFour={setMinRatingFour}
-              formatPrice={formatPrice}
-              lang={lang}
-            />
+              <CategoryScroll
+                categories={categories}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+              />
 
-            <ProductGrid
-              filteredProducts={filteredProducts}
-              openQuickView={openQuickView}
-              toggleWishlist={toggleWishlist}
-              wishlist={wishlist}
-              toggleCompare={toggleCompare}
-              compareList={compareList}
-              handleAddToCart={handleAddToCart}
-              formatPrice={formatPrice}
-            />
+              <div className="mt-5 mb-6">
+                <StoreControlBar
+                  itemCount={filteredProducts.length}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                />
+              </div>
+
+              <div className="flex gap-8">
+                <FilterSidebar
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  uniqueBrands={uniqueBrands}
+                  selectedBrands={selectedBrands}
+                  setSelectedBrands={setSelectedBrands}
+                  maxPrice={maxPrice}
+                  setMaxPrice={setMaxPrice}
+                  minRatingFour={minRatingFour}
+                  setMinRatingFour={setMinRatingFour}
+                  formatPrice={formatPrice}
+                  lang={lang}
+                />
+
+                <ProductGrid
+                  filteredProducts={filteredProducts}
+                  openQuickView={openQuickView}
+                  toggleWishlist={toggleWishlist}
+                  wishlist={wishlist}
+                  toggleCompare={toggleCompare}
+                  compareList={compareList}
+                  handleAddToCart={handleAddToCart}
+                  formatPrice={formatPrice}
+                />
+              </div>
+            </div>
           </div>
 
           {/* RECENTLY VIEWED STRIP */}
@@ -567,6 +601,9 @@ export default function App({ mode = 'storefront' }) {
             openQuickView={openQuickView}
             formatPrice={formatPrice}
           />
+
+          {/* TRUST BADGES */}
+          <TrustBadges />
         </main>
       )}
 

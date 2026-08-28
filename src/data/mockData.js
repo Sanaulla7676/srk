@@ -13,9 +13,9 @@ export const CURRENCIES = {
 };
 
 export const defaultSlides = [
-    { id: 1, type: "image", url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=1600&q=80" },
-    { id: 2, type: "image", url: "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=1600&q=80" },
-    { id: 3, type: "image", url: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&w=1600&q=80" }
+    { id: 1, type: "image", url: "https://images.unsplash.com/photo-1744274230634-a53d9f98eaca?auto=format&fit=crop&w=1200&q=85" },
+    { id: 2, type: "image", url: "https://images.unsplash.com/photo-1672985354241-2112df154346?auto=format&fit=crop&w=1200&q=85" },
+    { id: 3, type: "image", url: "https://images.unsplash.com/photo-1746372283841-dbb3838f9935?auto=format&fit=crop&w=1200&q=85" }
 ];
 
 export const defaultCategories = [

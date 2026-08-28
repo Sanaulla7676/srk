@@ -22,6 +22,31 @@
   animation: spin-slow 12s linear infinite;
 }
 
+/* ---- RK storefront redesign only (does not affect admin dashboard) ---- */
+@keyframes rk-orbit-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.rk-orbit {
+  animation: rk-orbit-spin 16s linear infinite;
+}
+
+@keyframes rk-twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.rk-sparkle {
+  animation: rk-twinkle 2.6s ease-in-out infinite;
+}
+
+.rk-orbit-text {
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+}
+.rk-orbit-text textPath {
+  fill: currentColor;
+}
+
 @media print {
   body * {
     visibility: hidden;

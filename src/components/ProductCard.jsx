@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export default function ProductCard({
   product,
@@ -8,39 +9,47 @@ export default function ProductCard({
   toggleCompare,
   compareList,
   handleAddToCart,
-  formatPrice
+  formatPrice,
+  index = 0
 }) {
   const discountPct = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
   const isCompared = compareList.some((cp) => cp.id === product.id);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: (index % 8) * 0.06 }}
       onClick={() => openQuickView(product)}
-      className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group cursor-pointer relative"
+      className="font-rkSans text-rkInk flex flex-col group cursor-pointer relative"
     >
-      <div className="relative aspect-[3/4] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <div className="relative aspect-[3/4] bg-rkCreamDeep overflow-hidden rounded-sm">
         <img
           src={product.img}
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <span className="absolute top-2 left-2 bg-black/75 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-          {product.stock <= 2 ? `Only ${product.stock} left!` : 'In Stock'}
-        </span>
+
+        {product.stock <= 2 && (
+          <span className="absolute top-2 left-2 bg-rkInk/85 text-rkCream text-[9px] font-medium tracking-wide px-1.5 py-0.5 rounded">
+            Only {product.stock} left
+          </span>
+        )}
         {discountPct > 0 && (
-          <span className="absolute bottom-2 left-2 bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase">
-            {discountPct}% OFF
+          <span className="absolute bottom-2 left-2 bg-rkCream/90 text-rkInk text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded uppercase">
+            {discountPct}% Off
           </span>
         )}
 
-        <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleWishlist(product.id);
             }}
-            className={`w-8 h-8 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center text-xs shadow-sm hover:scale-110 ${
-              wishlist.has(product.id) ? 'text-brandPink' : 'text-gray-700 dark:text-gray-300'
+            className={`w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-xs shadow-sm hover:scale-110 transition-transform ${
+              wishlist.has(product.id) ? 'text-rkGold' : 'text-rkInk'
             }`}
           >
             <i className={`fa-${wishlist.has(product.id) ? 'solid' : 'regular'} fa-heart`}></i>
@@ -51,38 +60,37 @@ export default function ProductCard({
               toggleCompare(product);
             }}
             title="Compare Product"
-            className={`w-8 h-8 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center text-xs shadow-sm hover:scale-110 ${
-              isCompared ? 'bg-brandPink text-white' : 'text-gray-700 dark:text-gray-300'
+            className={`w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-xs shadow-sm hover:scale-110 transition-transform ${
+              isCompared ? 'bg-rkInk text-rkCream' : 'text-rkInk'
             }`}
           >
             <i className="fa-solid fa-code-compare"></i>
           </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart(product);
+            }}
+            title="Add to Bag"
+            className="w-8 h-8 rounded-full bg-rkInk text-rkCream flex items-center justify-center text-xs shadow-sm hover:scale-110 transition-transform"
+          >
+            <i className="fa-solid fa-plus"></i>
+          </button>
         </div>
       </div>
 
-      <div className="p-3 flex flex-col flex-grow">
-        <h4 className="font-bold text-xs text-gray-900 dark:text-white truncate">{product.brand}</h4>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-2">{product.title}</p>
+      <div className="pt-3 flex flex-col flex-grow">
+        <h4 className="font-serif text-sm font-semibold truncate">{product.brand}</h4>
+        <p className="text-[11px] text-rkInkSoft truncate mb-1.5">{product.title}</p>
 
-        <div className="mt-auto flex items-center gap-1.5 text-xs">
-          <span className="font-extrabold text-gray-900 dark:text-white">{formatPrice(product.price)}</span>
-          <span className="text-[10px] text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-semibold">{formatPrice(product.price)}</span>
+          <span className="text-[10px] text-rkInkSoft/70 line-through">{formatPrice(product.originalPrice)}</span>
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-rkInkSoft">
+            {product.rating} <i className="fa-solid fa-star text-[8px] text-rkGold"></i>
+          </span>
         </div>
-
-        <div className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded mt-1.5 w-fit">
-          <span>{product.rating}</span> <i className="fa-solid fa-star text-[8px]"></i>
-        </div>
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddToCart(product);
-          }}
-          className="mt-3 w-full bg-brandPink hover:bg-brandPinkHover text-white text-xs font-bold py-1.5 rounded transition-colors uppercase"
-        >
-          Add To Bag
-        </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
