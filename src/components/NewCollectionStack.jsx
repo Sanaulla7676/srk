@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import Reveal from './Reveal';
 
 const CARDS = [
   { name: 'Boys Shirts', tag: 'Menswear', img: 'https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=800&q=80' },
@@ -60,24 +61,26 @@ export default function NewCollectionStack({ setSelectedCategory, setView }) {
       <div className="sticky top-0 h-screen w-full overflow-hidden font-rkSans text-rkInk">
         {/* Heading overlay, compact so the stage stays full-screen */}
         <div className="absolute top-8 sm:top-12 left-6 sm:left-14 z-[200] max-w-xs">
-          <p className="text-[11px] font-semibold tracking-[0.3em] uppercase text-rkGold mb-2">Handpicked For You</p>
-          <h2 className="font-rkSans font-extrabold uppercase text-3xl sm:text-4xl leading-[0.95] text-rkInk">
+          <Reveal as="p" className="text-[11px] font-semibold tracking-[0.3em] uppercase text-rkGold mb-2">Handpicked For You</Reveal>
+          <Reveal as="h2" delay={0.08} className="font-rkSans font-extrabold uppercase text-3xl sm:text-4xl leading-[0.95] text-rkInk">
             New Collection
-          </h2>
-          <p className="font-rkScript text-2xl sm:text-3xl text-rkGold mt-2">Elegance in every thread.</p>
-          <button
-            onClick={() => {
-              setSelectedCategory('All');
-              setView('storefront');
-              document.getElementById('rk-collections')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="inline-flex items-center gap-2.5 bg-rkTan hover:bg-rkTanHover text-rkNight text-[11px] font-bold tracking-[0.15em] uppercase pl-6 pr-2 py-2 rounded-full transition-colors mt-5"
-          >
-            <span>Shop Now</span>
-            <span className="w-7 h-7 rounded-full bg-rkNight text-rkTan flex items-center justify-center">
-              <i className="fa-solid fa-arrow-right text-[10px]"></i>
-            </span>
-          </button>
+          </Reveal>
+          <Reveal as="p" delay={0.16} className="font-rkScript text-2xl sm:text-3xl text-rkGold mt-2">Elegance in every thread.</Reveal>
+          <Reveal delay={0.24}>
+            <button
+              onClick={() => {
+                setSelectedCategory('All');
+                setView('storefront');
+                document.getElementById('rk-collections')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-2.5 bg-rkTan hover:bg-rkTanHover text-rkNight text-[11px] font-bold tracking-[0.15em] uppercase pl-6 pr-2 py-2 rounded-full transition-all duration-300 hover:scale-[1.03] mt-5"
+            >
+              <span>Shop Now</span>
+              <span className="w-7 h-7 rounded-full bg-rkNight text-rkTan flex items-center justify-center">
+                <i className="fa-solid fa-arrow-right text-[10px]"></i>
+              </span>
+            </button>
+          </Reveal>
         </div>
 
         {/* Full-screen card stage */}

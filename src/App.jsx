@@ -24,7 +24,7 @@ import StoreControlBar from './components/StoreControlBar';
 import FilterSidebar from './components/FilterSidebar';
 import ProductGrid from './components/ProductGrid';
 import TrustBadges from './components/TrustBadges';
-import ScrambleText from './components/ScrambleText';
+import Reveal from './components/Reveal';
 import RecentlyViewedStrip from './components/RecentlyViewedStrip';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
@@ -546,9 +546,9 @@ export default function App({ mode = 'storefront' }) {
           {/* COLLECTIONS: tabs, filters & grid */}
           <div id="rk-collections" className="bg-rkCream px-4 lg:px-10 py-16 lg:py-20">
             <div className="max-w-7xl mx-auto">
-              <h2 className="font-serif text-4xl sm:text-5xl font-bold text-rkInk text-center mb-8">
-                <ScrambleText text="What You'll Love" duration={700} />
-              </h2>
+              <Reveal as="h2" className="font-serif text-4xl sm:text-5xl font-bold text-rkInk text-center mb-8">
+                What You&rsquo;ll Love
+              </Reveal>
 
               <CategoryScroll
                 categories={categories}

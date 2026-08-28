@@ -1,4 +1,5 @@
 import React from 'react';
+import Reveal from './Reveal';
 
 const TRUST = [
   { icon: 'fa-shield-halved', title: 'Secure Payments', sub: '100% secure checkout' },
@@ -13,8 +14,8 @@ export default function TrustBadges() {
     <div className="bg-rkCreamSoft border-t border-rkLine font-rkSans text-rkInk py-10">
       <div className="max-w-7xl mx-auto px-6 lg:px-14 flex flex-col items-center gap-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full">
-          {TRUST.map((t) => (
-            <div key={t.title} className="flex items-center justify-center sm:justify-start gap-3">
+          {TRUST.map((t, i) => (
+            <Reveal key={t.title} delay={i * 0.08} y={16} className="flex items-center justify-center sm:justify-start gap-3">
               <span className="w-10 h-10 rounded-full bg-rkCreamDeep flex items-center justify-center text-rkGold shrink-0">
                 <i className={`fa-solid ${t.icon} text-sm`}></i>
               </span>
@@ -22,7 +23,7 @@ export default function TrustBadges() {
                 <p className="text-xs font-bold">{t.title}</p>
                 <p className="text-[11px] text-rkInkSoft">{t.sub}</p>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
 

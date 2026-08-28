@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { TRANSLATIONS, CURRENCIES } from '../data/mockData';
 
 export default function Header({
@@ -48,7 +49,11 @@ export default function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-rkCream/95 backdrop-blur-sm border-b border-rkLine font-rkSans text-rkInk">
+    <motion.header
+      initial={{ opacity: 0, y: -15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="sticky top-0 z-40 bg-rkCream/95 backdrop-blur-sm border-b border-rkLine font-rkSans text-rkInk">
       {/* Utility row: everything the storefront already offered, restyled minimal */}
       <div className="hidden lg:flex items-center justify-end gap-4 px-6 lg:px-10 h-7 text-[10px] uppercase tracking-widest border-b border-rkLine/70 text-rkInkSoft">
         <button
@@ -114,24 +119,25 @@ export default function Header({
         </div>
 
         <nav className="hidden lg:flex items-center gap-7 text-[11px] font-medium tracking-[0.18em] uppercase">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => goTo(item)}
-              className={`pb-1 border-b transition-all flex items-center gap-1.5 ${
-                selectedCategory === item.category && view === 'storefront'
-                  ? 'border-rkGold text-rkInk'
-                  : 'border-transparent text-rkInkSoft hover:text-rkInk hover:border-rkInk/40'
-              }`}
-            >
-              <span>{item.label}</span>
-              {item.badge && (
-                <span className="bg-rkGold/20 text-rkGold text-[9px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal">
-                  Sale
-                </span>
-              )}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const active = selectedCategory === item.category && view === 'storefront';
+            return (
+              <button
+                key={item.label}
+                onClick={() => goTo(item)}
+                className={`rk-underline-link pb-1 flex items-center gap-1.5 ${
+                  active ? 'text-rkInk rk-active' : 'text-rkInkSoft hover:text-rkInk'
+                }`}
+              >
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="bg-rkGold/20 text-rkGold text-[9px] font-bold px-1.5 py-0.5 rounded-full normal-case tracking-normal">
+                    Sale
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-4 sm:gap-5">
@@ -215,6 +221,6 @@ export default function Header({
           ))}
         </div>
       )}
-    </header>
+    </motion.header>
   );
 }
