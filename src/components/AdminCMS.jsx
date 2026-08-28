@@ -39,6 +39,34 @@ export default function AdminCMS({
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
 
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatImg, setEditCatImg] = useState('');
+
+  const startEditCategory = (cat) => {
+    setEditingCatId(cat.id);
+    setEditCatName(cat.name);
+    setEditCatImg(cat.img);
+  };
+
+  const cancelEditCategory = () => {
+    setEditingCatId(null);
+    setEditCatName('');
+    setEditCatImg('');
+  };
+
+  const saveEditCategory = () => {
+    if (!editCatName || !editCatImg) return alert('Category name and image are required!');
+    const oldCat = categories.find((c) => c.id === editingCatId);
+    setCategories(categories.map((c) => (c.id === editingCatId ? { ...c, name: editCatName, img: editCatImg } : c)));
+    if (oldCat && oldCat.name !== editCatName) {
+      setProducts(products.map((p) => (p.category === oldCat.name ? { ...p, category: editCatName } : p)));
+    }
+    addAuditLog('Category Updated', `Updated category '${oldCat?.name}' to '${editCatName}'`);
+    showToast('Category Updated!');
+    cancelEditCategory();
+  };
+
   const [newSlideType, setNewSlideType] = useState('image');
   const [newSlideUrl, setNewSlideUrl] = useState('');
 
@@ -486,18 +514,62 @@ export default function AdminCMS({
               Active Categories Catalog ({categories.length})
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {categories.map((c) => (
-                <div key={c.id} className="border border-gray-200 dark:border-darkBorder p-3 rounded text-center relative group">
-                  <img src={c.img} alt={c.name} className="w-16 h-16 rounded-full object-cover mx-auto mb-2" />
-                  <p className="font-bold text-xs">{c.name}</p>
-                  <button
-                    onClick={() => setCategories(categories.filter((cat) => cat.id !== c.id))}
-                    className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                  >
-                    <i className="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              ))}
+              {categories.map((c) =>
+                editingCatId === c.id ? (
+                  <div key={c.id} className="col-span-2 border-2 border-brandPink p-4 rounded text-left space-y-3 bg-pink-50/40 dark:bg-pink-950/20">
+                    <input
+                      type="text"
+                      placeholder="Category Name"
+                      value={editCatName}
+                      onChange={(e) => setEditCatName(e.target.value)}
+                      className="w-full p-2.5 border rounded bg-transparent border-gray-300 dark:border-gray-700 text-xs"
+                    />
+                    <MediaUploader
+                      allowedTypes="image/*"
+                      label="Replace Category Image (optional)"
+                      onMediaUploaded={(url) => setEditCatImg(url)}
+                    />
+                    {editCatImg && (
+                      <img src={editCatImg} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={saveEditCategory}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-4 py-2 rounded shadow uppercase"
+                      >
+                        <i className="fa-solid fa-check mr-1"></i> Save Changes
+                      </button>
+                      <button
+                        onClick={cancelEditCategory}
+                        className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold text-[11px] px-4 py-2 rounded uppercase"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={c.id} className="border border-gray-200 dark:border-darkBorder p-3 rounded text-center relative group">
+                    <img src={c.img} alt={c.name} className="w-16 h-16 rounded-full object-cover mx-auto mb-2" />
+                    <p className="font-bold text-xs">{c.name}</p>
+                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => startEditCategory(c)}
+                        title="Edit Category"
+                        className="text-blue-500 hover:text-blue-600 text-xs"
+                      >
+                        <i className="fa-solid fa-pen"></i>
+                      </button>
+                      <button
+                        onClick={() => setCategories(categories.filter((cat) => cat.id !== c.id))}
+                        title="Delete Category"
+                        className="text-red-500 hover:text-red-600 text-xs"
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>

@@ -7,8 +7,7 @@ import {
   defaultProducts,
   defaultCoupons,
   defaultAddresses,
-  defaultAuditLogs,
-  mockSocialProofToasts
+  defaultAuditLogs
 } from './data/mockData';
 
 import FlashSaleHeader from './components/FlashSaleHeader';
@@ -108,7 +107,6 @@ export default function App({ mode = 'storefront' }) {
   const [activeInvoiceOrder, setActiveInvoiceOpen] = useState(null);
 
   const [toastMessage, setToastMessage] = useState('');
-  const [socialProofToast, setSocialProofToast] = useState('');
 
   // Cart Adjustments
   const [appliedCouponObj, setAppliedCouponObj] = useState(null);
@@ -172,16 +170,6 @@ export default function App({ mode = 'storefront' }) {
     }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
-
-  // Live Social Proof Toast Timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const randMsg = mockSocialProofToasts[Math.floor(Math.random() * mockSocialProofToasts.length)];
-      setSocialProofToast(randMsg);
-      setTimeout(() => setSocialProofToast(''), 4500);
-    }, 18000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Currency Formatter Helper
   const formatPrice = (amountInINR) => {
@@ -789,7 +777,7 @@ export default function App({ mode = 'storefront' }) {
         showToast={showToast}
       />
 
-      <Toast socialProofToast={socialProofToast} toastMessage={toastMessage} />
+      <Toast toastMessage={toastMessage} />
     </div>
   );
 }

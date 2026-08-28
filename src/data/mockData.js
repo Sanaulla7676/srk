@@ -64,10 +64,3 @@ export const defaultAuditLogs = [
     { id: 2, action: "Order Stage Advanced", detail: "Order #SRK1023 set to 'Shipped'", time: "1 hour ago" },
     { id: 3, action: "Promo Created", detail: "Added coupon 'SPIN20'", time: "2 hours ago" }
 ];
-
-export const mockSocialProofToasts = [
-    "Priya from New Delhi just ordered a Silk Lehenga Choli!",
-    "Rahul from Mumbai bought a Pack of 2 Polo Tees!",
-    "Ananya from Bengaluru added a Floral Party Dress to Bag!",
-    "🔥 Only 1 left in stock for Mothercare Pink Midi Dress!"
-];
