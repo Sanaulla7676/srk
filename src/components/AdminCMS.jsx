@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import MediaUploader from './MediaUploader';
+import { adminSignOut } from '../firebase';
 
 export default function AdminCMS({
   setView,
   setIsAdminLoggedIn,
   products,
-  setProducts,
   categories,
-  setCategories,
   slides,
-  setSlides,
   orders,
-  setOrders,
   coupons,
-  setCoupons,
   auditLogs,
   addAuditLog,
+  upsertDoc,
+  deleteDocById,
   lowStockProducts,
   adminTab,
   setAdminTab,
@@ -58,9 +56,11 @@ export default function AdminCMS({
   const saveEditCategory = () => {
     if (!editCatName || !editCatImg) return alert('Category name and image are required!');
     const oldCat = categories.find((c) => c.id === editingCatId);
-    setCategories(categories.map((c) => (c.id === editingCatId ? { ...c, name: editCatName, img: editCatImg } : c)));
+    upsertDoc('categories', editingCatId, { ...oldCat, name: editCatName, img: editCatImg });
     if (oldCat && oldCat.name !== editCatName) {
-      setProducts(products.map((p) => (p.category === oldCat.name ? { ...p, category: editCatName } : p)));
+      products
+        .filter((p) => p.category === oldCat.name)
+        .forEach((p) => upsertDoc('products', p.id, { ...p, category: editCatName }));
     }
     addAuditLog('Category Updated', `Updated category '${oldCat?.name}' to '${editCatName}'`);
     showToast('Category Updated!');
@@ -107,8 +107,10 @@ export default function AdminCMS({
           </div>
           <button
             onClick={() => {
-              setIsAdminLoggedIn(false);
-              window.location.href = '/';
+              adminSignOut().finally(() => {
+                setIsAdminLoggedIn(false);
+                window.location.href = '/';
+              });
             }}
             className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded shadow transition-all"
           >
@@ -130,9 +132,7 @@ export default function AdminCMS({
             {lowStockProducts.map((lp) => (
               <button
                 key={lp.id}
-                onClick={() =>
-                  setProducts(products.map((p) => (p.id === lp.id ? { ...p, stock: p.stock + 5 } : p)))
-                }
+                onClick={() => upsertDoc('products', lp.id, { ...lp, stock: lp.stock + 5 })}
                 className="bg-red-600 text-white font-bold text-[10px] px-2 py-1 rounded shadow"
               >
                 Restock '{lp.brand}' (+5)
@@ -348,13 +348,7 @@ export default function AdminCMS({
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() =>
-                              setProducts(
-                                products.map((item) =>
-                                  item.id === p.id ? { ...item, stock: Math.max(0, item.stock - 1) } : item
-                                )
-                              )
-                            }
+                            onClick={() => upsertDoc('products', p.id, { ...p, stock: Math.max(0, p.stock - 1) })}
                             className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded font-bold text-center"
                           >
                             -
@@ -363,13 +357,7 @@ export default function AdminCMS({
                             {p.stock}
                           </span>
                           <button
-                            onClick={() =>
-                              setProducts(
-                                products.map((item) =>
-                                  item.id === p.id ? { ...item, stock: item.stock + 1 } : item
-                                )
-                              )
-                            }
+                            onClick={() => upsertDoc('products', p.id, { ...p, stock: p.stock + 1 })}
                             className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded font-bold text-center"
                           >
                             +
@@ -380,7 +368,7 @@ export default function AdminCMS({
                       <td className="p-3">
                         <button
                           onClick={() => {
-                            setProducts(products.filter((item) => item.id !== p.id));
+                            deleteDocById('products', p.id);
                             addAuditLog('Product Deleted', `Removed '${p.brand} - ${p.title}'`);
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-2.5 py-1 rounded"
@@ -463,7 +451,7 @@ export default function AdminCMS({
                     <span className="text-[10px] text-gray-400">Min spend: ₹{c.minSpend}</span>
                   </div>
                   <button
-                    onClick={() => setCoupons(coupons.filter((item) => item.id !== c.id))}
+                    onClick={() => deleteDocById('coupons', c.id)}
                     className="text-red-500 hover:text-red-700 text-xs font-bold p-1"
                   >
                     <i className="fa-solid fa-trash"></i>
@@ -560,7 +548,7 @@ export default function AdminCMS({
                         <i className="fa-solid fa-pen"></i>
                       </button>
                       <button
-                        onClick={() => setCategories(categories.filter((cat) => cat.id !== c.id))}
+                        onClick={() => deleteDocById('categories', c.id)}
                         title="Delete Category"
                         className="text-red-500 hover:text-red-600 text-xs"
                       >
@@ -624,7 +612,7 @@ export default function AdminCMS({
                     <img src={sl.url} alt="Slide" className="w-full h-32 object-cover" />
                   )}
                   <button
-                    onClick={() => setSlides(slides.filter((item) => item.id !== sl.id))}
+                    onClick={() => deleteDocById('slides', sl.id)}
                     className="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <i className="fa-solid fa-trash"></i>

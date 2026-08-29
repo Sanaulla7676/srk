@@ -9,6 +9,7 @@ import {
   defaultAddresses,
   defaultAuditLogs
 } from './data/mockData';
+import { subscribeToCollection, upsertDoc, deleteDocById, watchAdminAuth } from './firebase';
 
 import FlashSaleHeader from './components/FlashSaleHeader';
 import Header from './components/Header';
@@ -29,6 +30,7 @@ import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import QuickViewModal from './components/QuickViewModal';
 import AdminCMS from './components/AdminCMS';
+import AdminLoginGate from './components/AdminLoginGate';
 import AIStylistModal from './components/AIStylistModal';
 import CompareModal from './components/CompareModal';
 import SizeGuideModal from './components/SizeGuideModal';
@@ -41,23 +43,26 @@ import Toast from './components/Toast';
 import Footer from './components/Footer';
 
 export default function App({ mode = 'storefront' }) {
-  // Master App State with LocalStorage Persistence
-  const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('shrirk_products')) || defaultProducts);
-  const [categories, setCategories] = useState(() => JSON.parse(localStorage.getItem('shrirk_categories')) || defaultCategories);
-  const [slides, setSlides] = useState(() => JSON.parse(localStorage.getItem('shrirk_slides')) || defaultSlides);
-  const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem('shrirk_orders')) || [
-    { id: 'SRK1023', customer: 'Alex Johnson', itemsCount: 2, total: 3298, giftWrap: true, giftNote: "Happy Birthday Ananya!", status: 'Shipped', date: new Date().toLocaleDateString() }
-  ]);
-  const [coupons, setCoupons] = useState(() => JSON.parse(localStorage.getItem('shrirk_coupons')) || defaultCoupons);
+  // Store-wide data now lives in Firestore (see subscriptions below) so
+  // that admin edits are identical for every visitor and device. These
+  // defaults are just the initial paint before the first snapshot
+  // arrives, and a safety net if a collection is ever legitimately empty.
+  const [products, setProducts] = useState(defaultProducts);
+  const [categories, setCategories] = useState(defaultCategories);
+  const [slides, setSlides] = useState(defaultSlides);
+  const [orders, setOrders] = useState([]);
+  const [coupons, setCoupons] = useState(defaultCoupons);
   const [addresses, setAddresses] = useState(() => JSON.parse(localStorage.getItem('shrirk_addresses')) || defaultAddresses);
-  const [auditLogs, setAuditLogs] = useState(() => JSON.parse(localStorage.getItem('shrirk_audit_logs')) || defaultAuditLogs);
+  const [auditLogs, setAuditLogs] = useState(defaultAuditLogs);
 
   const [walletBalance, setWalletBalance] = useState(() => parseInt(localStorage.getItem('shrirk_wallet')) || 500);
   const [insiderPoints, setInsiderPoints] = useState(() => parseInt(localStorage.getItem('shrirk_insider_pts')) || 850);
   const [recentlyViewed, setRecentlyViewed] = useState(() => JSON.parse(localStorage.getItem('shrirk_recent_views')) || [1, 2, 8, 15]);
   const [compareList, setCompareList] = useState([]);
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => localStorage.getItem('shrirk_admin_auth') === 'true');
+  // Backed by real Firebase Auth (see watchAdminAuth effect below), not
+  // just a local flag — this is what Firestore's security rules check.
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('shrirk_dark_mode') === 'true');
   const [lang, setLanguage] = useState('EN');
   const [currency, setCurrency] = useState('INR');
@@ -119,30 +124,48 @@ export default function App({ mode = 'storefront' }) {
     { sender: 'bot', text: 'Hello! Welcome to Shri RK Junior Support. How can I help you today?' }
   ]);
 
-  // LocalStorage Sync
-  // Wrapped in try/catch because uploaded photos can fall back to large
-  // base64 strings (see cloudinary.js) when no real Cloudinary account is
-  // configured; without this guard a full localStorage quota silently
-  // drops the save and the new item vanishes on the next page load.
-  const safeSetItem = (key, value) => {
-    try {
-      localStorage.setItem(key, value);
-    } catch (err) {
-      console.error(`Failed to save '${key}' to localStorage`, err);
-      showToast("Couldn't save — storage is full. Use a smaller photo or connect Cloudinary in Settings.");
-    }
-  };
-  useEffect(() => { safeSetItem('shrirk_products', JSON.stringify(products)); }, [products]);
-  useEffect(() => { safeSetItem('shrirk_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { safeSetItem('shrirk_slides', JSON.stringify(slides)); }, [slides]);
-  useEffect(() => { localStorage.setItem('shrirk_orders', JSON.stringify(orders)); }, [orders]);
-  useEffect(() => { localStorage.setItem('shrirk_coupons', JSON.stringify(coupons)); }, [coupons]);
+  // Live Firestore Sync — fires immediately with current data, then again
+  // on every change from ANY device, which is what makes admin edits show
+  // up everywhere instead of just the browser that made them. The
+  // `data.length &&` guard is a safety net so a brand-new/unseeded
+  // collection never blanks out the storefront.
+  useEffect(() => subscribeToCollection('products', (data) => data.length && setProducts(data)), []);
+  useEffect(() => subscribeToCollection('categories', (data) => data.length && setCategories(data)), []);
+  useEffect(() => subscribeToCollection('slides', (data) => data.length && setSlides(data)), []);
+  useEffect(() => subscribeToCollection('coupons', (data) => data.length && setCoupons(data)), []);
+  useEffect(
+    () => subscribeToCollection('orders', (data) => setOrders([...data].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))),
+    []
+  );
+  // Audit log is admin-only data (Firestore rules require auth to read
+  // it), so only subscribe once actually signed in — otherwise every
+  // storefront visitor's console fills with a permission-denied error.
+  useEffect(() => {
+    if (!isAdminLoggedIn) return;
+    return subscribeToCollection('auditLogs', (data) =>
+      setAuditLogs([...data].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 50))
+    );
+  }, [isAdminLoggedIn]);
+
+  // Real Firebase Auth session — this is what Firestore's rules check
+  // before allowing a write, so it's the actual security boundary (the
+  // Admin Login modal is just the UI for it).
+  const [authChecked, setAuthChecked] = useState(false);
+  useEffect(
+    () =>
+      watchAdminAuth((user) => {
+        setIsAdminLoggedIn(!!user);
+        setAuthChecked(true);
+      }),
+    []
+  );
+
+  // These stay per-browser/per-visitor on purpose (cart, wallet, etc. are
+  // not meant to be shared across devices the way store data is).
   useEffect(() => { localStorage.setItem('shrirk_addresses', JSON.stringify(addresses)); }, [addresses]);
-  useEffect(() => { localStorage.setItem('shrirk_audit_logs', JSON.stringify(auditLogs)); }, [auditLogs]);
   useEffect(() => { localStorage.setItem('shrirk_wallet', walletBalance); }, [walletBalance]);
   useEffect(() => { localStorage.setItem('shrirk_insider_pts', insiderPoints); }, [insiderPoints]);
   useEffect(() => { localStorage.setItem('shrirk_recent_views', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
-  useEffect(() => { localStorage.setItem('shrirk_admin_auth', isAdminLoggedIn); }, [isAdminLoggedIn]);
   useEffect(() => {
     localStorage.setItem('shrirk_dark_mode', isDarkMode);
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -184,7 +207,10 @@ export default function App({ mode = 'storefront' }) {
   };
 
   const addAuditLog = (action, detail) => {
-    setAuditLogs((prev) => [{ id: Date.now(), action, detail, time: 'Just now' }, ...prev]);
+    const id = Date.now();
+    upsertDoc('auditLogs', id, { id, action, detail, time: 'Just now' }).catch((err) =>
+      console.error('Failed to write audit log', err)
+    );
   };
 
   // Voice Search
@@ -345,6 +371,7 @@ export default function App({ mode = 'storefront' }) {
 
     const newOrder = {
       id: 'SRK' + Math.floor(10000 + Math.random() * 90000),
+      createdAt: Date.now(),
       customer: custName || 'Alex Johnson',
       itemsCount: cart.reduce((s, i) => s + i.qty, 0),
       total: cartFinalTotal,
@@ -354,7 +381,7 @@ export default function App({ mode = 'storefront' }) {
       date: new Date().toLocaleDateString()
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
+    upsertDoc('orders', newOrder.id, newOrder).catch((err) => console.error('Failed to place order', err));
     addAuditLog('Order Placed', `New Order ${newOrder.id} for ${formatPrice(cartFinalTotal)}`);
     setCart([]);
     setAppliedCouponObj(null);
@@ -365,7 +392,11 @@ export default function App({ mode = 'storefront' }) {
   const handleRequestReturn = (orderId) => {
     const reason = prompt('Please enter return reason (e.g. Size Too Small, Defective Fabric):');
     if (reason) {
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'Return Requested' } : o)));
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) return;
+      upsertDoc('orders', orderId, { ...order, status: 'Return Requested' }).catch((err) =>
+        console.error('Failed to update order', err)
+      );
       addAuditLog('Return Requested', `Customer requested return for Order #${orderId}`);
       showToast(`Return requested for #${orderId}`);
     }
@@ -373,20 +404,17 @@ export default function App({ mode = 'storefront' }) {
 
   const advanceOrderStatus = (orderId) => {
     const stages = ['Placed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id === orderId) {
-          const curIdx = stages.indexOf(o.status);
-          if (curIdx < stages.length - 1) {
-            const newSt = stages[curIdx + 1];
-            addAuditLog('Order Stage Advanced', `Order ${orderId} moved to '${newSt}'`);
-            showToast(`Order ${orderId} updated to ${newSt}`);
-            return { ...o, status: newSt };
-          }
-        }
-        return o;
-      })
-    );
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    const curIdx = stages.indexOf(order.status);
+    if (curIdx < stages.length - 1) {
+      const newSt = stages[curIdx + 1];
+      upsertDoc('orders', orderId, { ...order, status: newSt }).catch((err) =>
+        console.error('Failed to update order', err)
+      );
+      addAuditLog('Order Stage Advanced', `Order ${orderId} moved to '${newSt}'`);
+      showToast(`Order ${orderId} updated to ${newSt}`);
+    }
   };
 
   // CMS Handlers
@@ -404,7 +432,7 @@ export default function App({ mode = 'storefront' }) {
       fabric: 'Organic Cotton',
       img
     };
-    setProducts((prev) => [item, ...prev]);
+    upsertDoc('products', item.id, item).catch((err) => console.error('Failed to save product', err));
     addAuditLog('Product Added', `Added '${brand} - ${title}'`);
     showToast('Product Published to Catalog!');
   };
@@ -419,7 +447,7 @@ export default function App({ mode = 'storefront' }) {
       minSpend: Number(min) || 0,
       active: true
     };
-    setCoupons((prev) => [...prev, c]);
+    upsertDoc('coupons', c.id, c).catch((err) => console.error('Failed to save coupon', err));
     addAuditLog('Promo Coupon Created', `Created coupon '${c.code}'`);
     showToast('New Promo Code Active!');
   };
@@ -427,7 +455,7 @@ export default function App({ mode = 'storefront' }) {
   const handleAddCategory = (name, img) => {
     if (!name || !img) return alert('Fill category fields!');
     const cat = { id: Date.now(), name, img };
-    setCategories((prev) => [...prev, cat]);
+    upsertDoc('categories', cat.id, cat).catch((err) => console.error('Failed to save category', err));
     addAuditLog('Category Added', `Added category '${cat.name}'`);
     showToast('Category Saved!');
   };
@@ -435,7 +463,7 @@ export default function App({ mode = 'storefront' }) {
   const handleAddHeroSlide = (type, url) => {
     if (!url) return alert('Enter Hero Slide URL!');
     const slide = { id: Date.now(), type, url };
-    setSlides((prev) => [...prev, slide]);
+    upsertDoc('slides', slide.id, slide).catch((err) => console.error('Failed to save hero slide', err));
     addAuditLog('Hero Media Added', `Added ${type} hero slide`);
     showToast('Hero Slide Published!');
   };
@@ -490,22 +518,25 @@ export default function App({ mode = 'storefront' }) {
       )}
 
       {/* MAIN CONTENT VIEW */}
-      {mode === 'admin' ? (
+      {mode === 'admin' && !authChecked ? (
+        <main className="flex-grow min-h-screen flex items-center justify-center bg-gray-100 dark:bg-darkBg">
+          <i className="fa-solid fa-spinner animate-spin text-2xl text-brandPink"></i>
+        </main>
+      ) : mode === 'admin' && !isAdminLoggedIn ? (
+        <AdminLoginGate />
+      ) : mode === 'admin' ? (
         <AdminCMS
           setView={setView}
           setIsAdminLoggedIn={setIsAdminLoggedIn}
           products={products}
-          setProducts={setProducts}
           categories={categories}
-          setCategories={setCategories}
           slides={slides}
-          setSlides={setSlides}
           orders={orders}
-          setOrders={setOrders}
           coupons={coupons}
-          setCoupons={setCoupons}
           auditLogs={auditLogs}
           addAuditLog={addAuditLog}
+          upsertDoc={upsertDoc}
+          deleteDocById={deleteDocById}
           lowStockProducts={lowStockProducts}
           adminTab={adminTab}
           setAdminTab={setAdminTab}
@@ -772,9 +803,6 @@ export default function App({ mode = 'storefront' }) {
       <LoginModal
         isLoginOpen={isLoginOpen}
         setIsLoginOpen={setIsLoginOpen}
-        setIsAdminLoggedIn={setIsAdminLoggedIn}
-        setView={setView}
-        showToast={showToast}
       />
 
       <Toast toastMessage={toastMessage} />
