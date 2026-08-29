@@ -36,13 +36,21 @@ service cloud.firestore {
       allow update, delete: if isOwner();
     }
 
-    // Orders: any customer can place an order (no customer accounts
-    // exist yet, so order history is store-wide rather than per-user,
-    // matching the app's current behavior) — only the store owner can
-    // change or cancel an order's status.
+    // Orders now belong to a real signed-in customer (customerId == their
+    // uid). A customer can read/create/update only their own orders
+    // (update covers things like requesting a return); the store owner
+    // can read, update, or delete any order for the pipeline view.
     match /orders/{docId} {
-      allow read, create: if true;
-      allow update, delete: if isOwner();
+      allow read, update: if isOwner() || (request.auth != null && resource.data.customerId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.customerId == request.auth.uid;
+      allow delete: if isOwner();
+    }
+
+    // Customer profile docs: a customer manages only their own; the store
+    // owner can read any of them (e.g. to see a name against an order).
+    match /customers/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isOwner();
     }
 
     // Everything else stays closed by default.

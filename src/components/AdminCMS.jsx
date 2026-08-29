@@ -75,6 +75,31 @@ export default function AdminCMS({
   const [newCouponValue, setNewCouponValue] = useState('');
   const [newCouponMin, setNewCouponMin] = useState('499');
 
+  const analytics = React.useMemo(() => {
+    const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
+    const totalOrders = orders.length;
+    const avgOrderValue = totalOrders ? Math.round(totalRevenue / totalOrders) : 0;
+
+    const stages = ['Placed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Return Requested'];
+    const byStatus = stages.map((s) => ({ status: s, count: orders.filter((o) => o.status === s).length }));
+
+    const byDayMap = {};
+    orders.forEach((o) => {
+      const day = o.date || 'Unknown';
+      byDayMap[day] = (byDayMap[day] || 0) + (o.total || 0);
+    });
+    const byDay = Object.entries(byDayMap)
+      .map(([date, revenue]) => ({ date, revenue }))
+      .sort((a, b) => (a.date > b.date ? 1 : -1))
+      .slice(-14);
+    const maxDayRevenue = Math.max(1, ...byDay.map((d) => d.revenue));
+
+    const activeProducts = products.length;
+    const outOfStock = products.filter((p) => p.stock === 0).length;
+
+    return { totalRevenue, totalOrders, avgOrderValue, byStatus, byDay, maxDayRevenue, activeProducts, outOfStock };
+  }, [orders, products]);
+
   const handleExportBackup = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
       products, categories, slides, orders, coupons, auditLogs
@@ -145,6 +170,7 @@ export default function AdminCMS({
       {/* ADMIN TAB NAVIGATION */}
       <div className="flex gap-2 mb-6 border-b border-gray-300 dark:border-darkBorder pb-2 overflow-x-auto">
         {[
+          { id: 'analytics', label: 'Analytics', icon: 'fa-chart-line' },
           { id: 'orders', label: 'Orders & Pipeline', icon: 'fa-shopping-cart' },
           { id: 'products', label: 'Manage Products', icon: 'fa-boxes-stacked' },
           { id: 'coupons', label: 'Promo Coupons CMS', icon: 'fa-ticket' },
@@ -167,6 +193,65 @@ export default function AdminCMS({
           </button>
         ))}
       </div>
+
+      {/* TAB 0: ANALYTICS */}
+      {adminTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { label: 'Total Revenue', value: formatPrice(analytics.totalRevenue), icon: 'fa-sack-dollar', color: 'text-emerald-600' },
+              { label: 'Total Orders', value: analytics.totalOrders, icon: 'fa-receipt', color: 'text-brandPink' },
+              { label: 'Avg Order Value', value: formatPrice(analytics.avgOrderValue), icon: 'fa-chart-simple', color: 'text-amber-600' },
+              { label: 'Active Products', value: analytics.activeProducts, icon: 'fa-boxes-stacked', color: 'text-blue-600' },
+              { label: 'Out of Stock', value: analytics.outOfStock, icon: 'fa-triangle-exclamation', color: 'text-red-600' }
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white dark:bg-darkCard p-4 rounded-lg border border-gray-200 dark:border-darkBorder shadow-sm">
+                <i className={`fa-solid ${stat.icon} ${stat.color} text-lg mb-2`}></i>
+                <p className="text-lg font-black">{stat.value}</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-500 font-bold">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white dark:bg-darkCard p-6 rounded-lg border border-gray-200 dark:border-darkBorder shadow-sm">
+            <h3 className="text-sm font-extrabold uppercase mb-4">Revenue by Day</h3>
+            {analytics.byDay.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-8">No orders yet — revenue will chart here once sales start.</p>
+            ) : (
+              <div className="flex items-end gap-2 h-48">
+                {analytics.byDay.map((d) => (
+                  <div key={d.date} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5" title={`${d.date}: ${formatPrice(d.revenue)}`}>
+                    <span className="text-[9px] font-bold text-gray-500">{formatPrice(d.revenue)}</span>
+                    <div
+                      className="w-full bg-brandPink rounded-t"
+                      style={{ height: `${Math.max(4, (d.revenue / analytics.maxDayRevenue) * 100)}%` }}
+                    ></div>
+                    <span className="text-[9px] text-gray-400">{d.date}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-darkCard p-6 rounded-lg border border-gray-200 dark:border-darkBorder shadow-sm">
+            <h3 className="text-sm font-extrabold uppercase mb-4">Orders by Stage</h3>
+            <div className="space-y-3">
+              {analytics.byStatus.map((s) => (
+                <div key={s.status} className="flex items-center gap-3 text-xs">
+                  <span className="w-32 font-bold shrink-0">{s.status}</span>
+                  <div className="flex-grow bg-gray-100 dark:bg-gray-800 h-4 rounded-full overflow-hidden">
+                    <div
+                      className="bg-brandGold h-full rounded-full transition-all"
+                      style={{ width: `${analytics.totalOrders ? (s.count / analytics.totalOrders) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  <span className="w-8 text-right font-bold shrink-0">{s.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: ORDERS */}
       {adminTab === 'orders' && (

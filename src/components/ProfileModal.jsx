@@ -1,8 +1,10 @@
 import React from 'react';
+import { customerSignOut } from '../firebase';
 
 export default function ProfileModal({
   isProfileOpen,
   setIsProfileOpen,
+  currentUser,
   loyaltyTier,
   walletBalance,
   insiderPoints,
@@ -13,6 +15,9 @@ export default function ProfileModal({
 }) {
   if (!isProfileOpen) return null;
 
+  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Guest';
+  const initials = displayName.slice(0, 2).toUpperCase();
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-lg max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
@@ -22,10 +27,10 @@ export default function ProfileModal({
 
         <div className="flex items-center gap-3 border-b pb-4 mb-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brandPink to-brandGold text-white flex items-center justify-center font-bold text-lg">
-            AJ
+            {initials}
           </div>
-          <div>
-            <h3 className="font-extrabold text-sm">Alex Johnson</h3>
+          <div className="flex-grow">
+            <h3 className="font-extrabold text-sm">{displayName}</h3>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span className={`font-bold ${loyaltyTier.color}`}>
                 <i className={`fa-solid ${loyaltyTier.icon}`}></i> {loyaltyTier.name}
@@ -33,6 +38,15 @@ export default function ProfileModal({
               <span>• Wallet: {formatPrice(walletBalance)}</span>
             </div>
           </div>
+          <button
+            onClick={() => {
+              customerSignOut();
+              setIsProfileOpen(false);
+            }}
+            className="text-[11px] font-bold text-gray-400 hover:text-red-500"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* VIP PROGRESS */}

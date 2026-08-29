@@ -9,7 +9,7 @@ import {
   defaultAddresses,
   defaultAuditLogs
 } from './data/mockData';
-import { subscribeToCollection, upsertDoc, deleteDocById, watchAdminAuth } from './firebase';
+import { subscribeToCollection, subscribeToCustomerOrders, upsertDoc, deleteDocById, watchAdminAuth, ADMIN_UID } from './firebase';
 
 import FlashSaleHeader from './components/FlashSaleHeader';
 import Header from './components/Header';
@@ -39,6 +39,7 @@ import SpinWheelModal from './components/SpinWheelModal';
 import ChatBotModal from './components/ChatBotModal';
 import InvoiceModal from './components/InvoiceModal';
 import LoginModal from './components/LoginModal';
+import CustomerAuthModal from './components/CustomerAuthModal';
 import Toast from './components/Toast';
 import Footer from './components/Footer';
 
@@ -133,10 +134,6 @@ export default function App({ mode = 'storefront' }) {
   useEffect(() => subscribeToCollection('categories', (data) => data.length && setCategories(data)), []);
   useEffect(() => subscribeToCollection('slides', (data) => data.length && setSlides(data)), []);
   useEffect(() => subscribeToCollection('coupons', (data) => data.length && setCoupons(data)), []);
-  useEffect(
-    () => subscribeToCollection('orders', (data) => setOrders([...data].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))),
-    []
-  );
   // Audit log is admin-only data (Firestore rules require auth to read
   // it), so only subscribe once actually signed in — otherwise every
   // storefront visitor's console fills with a permission-denied error.
@@ -147,18 +144,41 @@ export default function App({ mode = 'storefront' }) {
     );
   }, [isAdminLoggedIn]);
 
-  // Real Firebase Auth session — this is what Firestore's rules check
-  // before allowing a write, so it's the actual security boundary (the
-  // Admin Login modal is just the UI for it).
+  // Real Firebase Auth session — customers and the store owner share the
+  // same underlying auth pool (Firestore rules, keyed off ADMIN_UID, are
+  // what actually separate their permissions), so this one listener
+  // drives both "am I the owner" and "which customer is signed in".
   const [authChecked, setAuthChecked] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   useEffect(
     () =>
       watchAdminAuth((user) => {
-        setIsAdminLoggedIn(!!user);
+        setCurrentUser(user);
+        setIsAdminLoggedIn(user?.uid === ADMIN_UID);
         setAuthChecked(true);
       }),
     []
   );
+
+  const [isCustomerAuthOpen, setIsCustomerAuthOpen] = useState(false);
+  const openProfile = () => (currentUser ? setIsProfileOpen(true) : setIsCustomerAuthOpen(true));
+  const openCheckout = () => (currentUser ? setIsCheckoutOpen(true) : setIsCustomerAuthOpen(true));
+
+  // Orders: the admin dashboard sees every order (for the pipeline), a
+  // signed-in customer sees only their own (Firestore rules enforce this
+  // same split), and a signed-out storefront visitor sees none.
+  useEffect(() => {
+    const sortDesc = (data) => setOrders([...data].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+    if (mode === 'admin') {
+      if (!isAdminLoggedIn) return;
+      return subscribeToCollection('orders', sortDesc);
+    }
+    if (!currentUser) {
+      setOrders([]);
+      return;
+    }
+    return subscribeToCustomerOrders(currentUser.uid, sortDesc);
+  }, [mode, isAdminLoggedIn, currentUser]);
 
   // These stay per-browser/per-visitor on purpose (cart, wallet, etc. are
   // not meant to be shared across devices the way store data is).
@@ -362,7 +382,13 @@ export default function App({ mode = 'storefront' }) {
     setPincodeResult({ success: true, dateStr });
   };
 
-  const handlePlaceOrder = (custName) => {
+  const handlePlaceOrder = () => {
+    if (!currentUser) {
+      setIsCheckoutOpen(false);
+      setIsCustomerAuthOpen(true);
+      return;
+    }
+
     if (redeemPoints) setInsiderPoints((prev) => prev - ptsDiscount);
     if (useWalletInCheckout) setWalletBalance((prev) => prev - walletDeduction);
 
@@ -372,7 +398,8 @@ export default function App({ mode = 'storefront' }) {
     const newOrder = {
       id: 'SRK' + Math.floor(10000 + Math.random() * 90000),
       createdAt: Date.now(),
-      customer: custName || 'Alex Johnson',
+      customerId: currentUser.uid,
+      customer: currentUser.displayName || currentUser.email,
       itemsCount: cart.reduce((s, i) => s + i.qty, 0),
       total: cartFinalTotal,
       giftWrap: isGiftWrap,
@@ -504,7 +531,7 @@ export default function App({ mode = 'storefront' }) {
             loyaltyTier={loyaltyTier}
             insiderPoints={insiderPoints}
             setIsSpinWheelOpen={setIsSpinWheelOpen}
-            setIsProfileOpen={setIsProfileOpen}
+            setIsProfileOpen={openProfile}
             isAdminLoggedIn={isAdminLoggedIn}
             setIsLoginOpen={setIsLoginOpen}
             wishlist={wishlist}
@@ -663,6 +690,7 @@ export default function App({ mode = 'storefront' }) {
       <ProfileModal
         isProfileOpen={isProfileOpen}
         setIsProfileOpen={setIsProfileOpen}
+        currentUser={currentUser}
         loyaltyTier={loyaltyTier}
         walletBalance={walletBalance}
         insiderPoints={insiderPoints}
@@ -779,7 +807,7 @@ export default function App({ mode = 'storefront' }) {
         totalDiscounts={totalDiscounts}
         cartFinalTotal={cartFinalTotal}
         formatPrice={formatPrice}
-        setIsCheckoutOpen={setIsCheckoutOpen}
+        setIsCheckoutOpen={openCheckout}
         lang={lang}
       />
 
@@ -803,6 +831,11 @@ export default function App({ mode = 'storefront' }) {
       <LoginModal
         isLoginOpen={isLoginOpen}
         setIsLoginOpen={setIsLoginOpen}
+      />
+
+      <CustomerAuthModal
+        isOpen={isCustomerAuthOpen}
+        onClose={() => setIsCustomerAuthOpen(false)}
       />
 
       <Toast toastMessage={toastMessage} />
