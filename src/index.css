@@ -4,6 +4,58 @@
 
 :root {
   --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* RK storefront theme (default: "Cream & Gold"). Values are R G B
+     channels (no commas, no rgb() wrapper) so Tailwind's rgb(var(...) /
+     <alpha-value>) opacity modifiers keep working. Admin-selectable —
+     see AdminCMS "Storefront Theme" and the [data-theme] blocks below. */
+  --rk-cream: 243 235 222;
+  --rk-cream-soft: 248 242 232;
+  --rk-cream-deep: 234 223 204;
+  --rk-ink: 34 29 24;
+  --rk-ink-soft: 74 67 60;
+  --rk-line: 219 206 184;
+  --rk-gold: 184 147 95;
+  --rk-night: 22 18 16;
+  --rk-night-soft: 34 28 24;
+  --rk-tan: 216 175 146;
+  --rk-tan-hover: 201 156 125;
+  --rk-maroon: 61 20 32;
+  --rk-maroon-soft: 90 29 46;
+}
+
+/* "Midnight" preset: inverts the light cream surfaces to dark ones. */
+:root[data-theme="midnight"] {
+  --rk-cream: 26 22 19;
+  --rk-cream-soft: 20 17 15;
+  --rk-cream-deep: 15 13 11;
+  --rk-ink: 240 233 222;
+  --rk-ink-soft: 189 178 163;
+  --rk-line: 62 54 46;
+  --rk-gold: 216 175 146;
+  --rk-night: 8 7 6;
+  --rk-night-soft: 14 12 10;
+  --rk-tan: 224 187 140;
+  --rk-tan-hover: 235 201 158;
+  --rk-maroon: 61 20 32;
+  --rk-maroon-soft: 90 29 46;
+}
+
+/* "Blush & Rose" preset: keeps light surfaces, swaps the accent to rose. */
+:root[data-theme="blush"] {
+  --rk-cream: 250 235 235;
+  --rk-cream-soft: 253 242 242;
+  --rk-cream-deep: 244 219 219;
+  --rk-ink: 43 24 30;
+  --rk-ink-soft: 107 74 82;
+  --rk-line: 232 196 201;
+  --rk-gold: 199 112 128;
+  --rk-night: 33 18 22;
+  --rk-night-soft: 46 26 31;
+  --rk-tan: 227 158 168;
+  --rk-tan-hover: 214 138 150;
+  --rk-maroon: 96 22 42;
+  --rk-maroon-soft: 128 33 58;
 }
 
 html {

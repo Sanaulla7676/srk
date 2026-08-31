@@ -9,7 +9,7 @@ import {
   defaultAddresses,
   defaultAuditLogs
 } from './data/mockData';
-import { subscribeToCollection, subscribeToCustomerOrders, upsertDoc, deleteDocById, watchAdminAuth, ADMIN_UID } from './firebase';
+import { subscribeToCollection, subscribeToCustomerOrders, subscribeToDoc, upsertDoc, deleteDocById, watchAdminAuth, ADMIN_UID } from './firebase';
 
 import FlashSaleHeader from './components/FlashSaleHeader';
 import Header from './components/Header';
@@ -31,14 +31,11 @@ import CheckoutModal from './components/CheckoutModal';
 import QuickViewModal from './components/QuickViewModal';
 import AdminCMS from './components/AdminCMS';
 import AdminLoginGate from './components/AdminLoginGate';
-import AIStylistModal from './components/AIStylistModal';
 import CompareModal from './components/CompareModal';
 import SizeGuideModal from './components/SizeGuideModal';
 import ProfileModal from './components/ProfileModal';
-import SpinWheelModal from './components/SpinWheelModal';
 import ChatBotModal from './components/ChatBotModal';
 import InvoiceModal from './components/InvoiceModal';
-import LoginModal from './components/LoginModal';
 import CustomerAuthModal from './components/CustomerAuthModal';
 import Toast from './components/Toast';
 import Footer from './components/Footer';
@@ -93,7 +90,6 @@ export default function App({ mode = 'storefront' }) {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [quickViewSize, setQuickViewSize] = useState('4-5Y');
   const [monogramText, setMonogramText] = useState('');
-  const [monogramColor, setMonogramColor] = useState('#ff3f6c');
   const [isGiftWrap, setIsGiftWrap] = useState(false);
   const [giftNote, setGiftNote] = useState('');
   const [useWalletInCheckout, setUseWalletInCheckout] = useState(false);
@@ -102,13 +98,10 @@ export default function App({ mode = 'storefront' }) {
   // Modals Visibility
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
-  const [isStylistOpen, setIsStylistOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [isSpinWheelOpen, setIsSpinWheelOpen] = useState(false);
   const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [activeInvoiceOrder, setActiveInvoiceOpen] = useState(null);
 
@@ -134,6 +127,19 @@ export default function App({ mode = 'storefront' }) {
   useEffect(() => subscribeToCollection('categories', (data) => data.length && setCategories(data)), []);
   useEffect(() => subscribeToCollection('slides', (data) => data.length && setSlides(data)), []);
   useEffect(() => subscribeToCollection('coupons', (data) => data.length && setCoupons(data)), []);
+
+  // Storefront theme preset — admin-controlled, live for every visitor.
+  const [siteTheme, setSiteTheme] = useState('default');
+  useEffect(
+    () =>
+      subscribeToDoc('settings', 'site', (data) => {
+        const theme = data?.theme || 'default';
+        setSiteTheme(theme);
+        document.documentElement.setAttribute('data-theme', theme);
+      }),
+    []
+  );
+
   // Audit log is admin-only data (Firestore rules require auth to read
   // it), so only subscribe once actually signed in — otherwise every
   // storefront visitor's console fills with a permission-denied error.
@@ -445,7 +451,7 @@ export default function App({ mode = 'storefront' }) {
   };
 
   // CMS Handlers
-  const handleAddProduct = (brand, title, cat, price, oldPrice, stock, img) => {
+  const handleAddProduct = (brand, title, cat, price, oldPrice, stock, img, description = '') => {
     if (!brand || !title || !price || !img) return alert('Fill required fields!');
     const item = {
       id: Date.now(),
@@ -457,7 +463,9 @@ export default function App({ mode = 'storefront' }) {
       stock: Number(stock) || 5,
       rating: 4.5,
       fabric: 'Organic Cotton',
-      img
+      description,
+      img,
+      variants: []
     };
     upsertDoc('products', item.id, item).catch((err) => console.error('Failed to save product', err));
     addAuditLog('Product Added', `Added '${brand} - ${title}'`);
@@ -523,17 +531,7 @@ export default function App({ mode = 'storefront' }) {
             setSearchQuery={setSearchQuery}
             handleVoiceSearch={handleVoiceSearch}
             isVoiceListening={isVoiceListening}
-            setIsStylistOpen={setIsStylistOpen}
-            currency={currency}
-            setCurrency={setCurrency}
-            isDarkMode={isDarkMode}
-            setIsDarkMode={setIsDarkMode}
-            loyaltyTier={loyaltyTier}
-            insiderPoints={insiderPoints}
-            setIsSpinWheelOpen={setIsSpinWheelOpen}
             setIsProfileOpen={openProfile}
-            isAdminLoggedIn={isAdminLoggedIn}
-            setIsLoginOpen={setIsLoginOpen}
             wishlist={wishlist}
             setIsWishlistOpen={setIsWishlistOpen}
             cart={cart}
@@ -563,6 +561,7 @@ export default function App({ mode = 'storefront' }) {
           auditLogs={auditLogs}
           addAuditLog={addAuditLog}
           upsertDoc={upsertDoc}
+          siteTheme={siteTheme}
           deleteDocById={deleteDocById}
           lowStockProducts={lowStockProducts}
           adminTab={adminTab}
@@ -590,10 +589,15 @@ export default function App({ mode = 'storefront' }) {
           <HeroFeatureStrip />
 
           {/* NEW COLLECTION: scroll-driven stacked card carousel */}
-          <NewCollectionStack setSelectedCategory={setSelectedCategory} setView={setView} />
+          <NewCollectionStack
+            products={products}
+            setSelectedCategory={setSelectedCategory}
+            setView={setView}
+            openQuickView={openQuickView}
+          />
 
           {/* SHOP BY CATEGORY */}
-          <CategoryShowcaseDark setSelectedCategory={setSelectedCategory} setView={setView} />
+          <CategoryShowcaseDark categories={categories} setSelectedCategory={setSelectedCategory} setView={setView} />
 
           {/* LIMITED TIME OFFER COUNTDOWN */}
           <PromoCountdown setSelectedCategory={setSelectedCategory} setView={setView} />
@@ -747,20 +751,6 @@ export default function App({ mode = 'storefront' }) {
         </div>
       )}
 
-      <AIStylistModal
-        isStylistOpen={isStylistOpen}
-        setIsStylistOpen={setIsStylistOpen}
-        setSelectedCategory={setSelectedCategory}
-        showToast={showToast}
-      />
-
-      <SpinWheelModal
-        isSpinWheelOpen={isSpinWheelOpen}
-        setIsSpinWheelOpen={setIsSpinWheelOpen}
-        setAppliedCouponObj={setAppliedCouponObj}
-        showToast={showToast}
-      />
-
       <ChatBotModal
         isChatBotOpen={isChatBotOpen}
         setIsChatBotOpen={setIsChatBotOpen}
@@ -773,8 +763,6 @@ export default function App({ mode = 'storefront' }) {
         setQuickViewProduct={setQuickViewProduct}
         monogramText={monogramText}
         setMonogramText={setMonogramText}
-        monogramColor={monogramColor}
-        setMonogramColor={setMonogramColor}
         pincodeCheck={pincodeCheck}
         setPincodeCheck={setPincodeCheck}
         handleCheckPincode={handleCheckPincode}
@@ -826,11 +814,6 @@ export default function App({ mode = 'storefront' }) {
         activeInvoiceOrder={activeInvoiceOrder}
         setActiveInvoiceOpen={setActiveInvoiceOpen}
         formatPrice={formatPrice}
-      />
-
-      <LoginModal
-        isLoginOpen={isLoginOpen}
-        setIsLoginOpen={setIsLoginOpen}
       />
 
       <CustomerAuthModal

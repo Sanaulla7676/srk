@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
 
+const UPI_ID = '9535980509@ybl';
+const PAYEE_NAME = 'Shri RK Fashions';
+
+function buildUpiLink(amount, orderNote) {
+  const params = new URLSearchParams({
+    pa: UPI_ID,
+    pn: PAYEE_NAME,
+    am: amount.toFixed(2),
+    cu: 'INR',
+    tn: orderNote
+  });
+  return `upi://pay?${params.toString()}`;
+}
+
 export default function CheckoutModal({
   isCheckoutOpen,
   setIsCheckoutOpen,
@@ -14,6 +28,12 @@ export default function CheckoutModal({
   const [paymentOption, setPaymentOption] = useState('COD');
 
   if (!isCheckoutOpen) return null;
+
+  const handleUpiPay = () => {
+    const link = buildUpiLink(cartFinalTotal, `Shri RK Fashions Order - ${customerName}`);
+    window.location.href = link;
+    handlePlaceOrder(customerName);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -61,12 +81,28 @@ export default function CheckoutModal({
             <option value="UPI">UPI / GPay / PhonePe</option>
             <option value="CARD">Credit / Debit Card</option>
           </select>
-          <button
-            onClick={() => handlePlaceOrder(customerName)}
-            className="w-full bg-brandPink text-white font-bold py-2.5 rounded uppercase text-xs mt-2"
-          >
-            Confirm & Place Order ({formatPrice(cartFinalTotal)})
-          </button>
+
+          {paymentOption === 'UPI' ? (
+            <div className="space-y-2 pt-2">
+              <p className="text-[11px] text-gray-500">
+                Tapping below opens your UPI app (GPay, PhonePe, Paytm…) with the amount and payee already filled in.
+              </p>
+              <button
+                onClick={handleUpiPay}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded uppercase text-xs flex items-center justify-center gap-2"
+              >
+                <i className="fa-solid fa-indian-rupee-sign"></i>
+                Pay Now via UPI ({formatPrice(cartFinalTotal)})
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => handlePlaceOrder(customerName)}
+              className="w-full bg-brandPink text-white font-bold py-2.5 rounded uppercase text-xs mt-2"
+            >
+              Confirm & Place Order ({formatPrice(cartFinalTotal)})
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -67,6 +67,15 @@ export function subscribeToCustomerOrders(uid, callback) {
   );
 }
 
+/** Live-subscribes to a single document (e.g. settings/site). */
+export function subscribeToDoc(collectionName, docId, callback) {
+  return onSnapshot(
+    doc(db, collectionName, docId),
+    (snap) => callback(snap.exists() ? snap.data() : null),
+    (err) => console.error(`Firestore subscription failed for '${collectionName}/${docId}':`, err)
+  );
+}
+
 /** Creates or fully overwrites one document (id must be present on `data`). */
 export function upsertDoc(collectionName, id, data) {
   return setDoc(doc(db, collectionName, String(id)), data);

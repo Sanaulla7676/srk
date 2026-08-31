@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TRANSLATIONS, CURRENCIES } from '../data/mockData';
+import { TRANSLATIONS } from '../data/mockData';
 
 export default function Header({
   view,
@@ -11,17 +11,7 @@ export default function Header({
   setSearchQuery,
   handleVoiceSearch,
   isVoiceListening,
-  setIsStylistOpen,
-  currency,
-  setCurrency,
-  isDarkMode,
-  setIsDarkMode,
-  loyaltyTier,
-  insiderPoints,
-  setIsSpinWheelOpen,
   setIsProfileOpen,
-  isAdminLoggedIn,
-  setIsLoginOpen,
   wishlist,
   setIsWishlistOpen,
   cart,
@@ -54,48 +44,6 @@ export default function Header({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-40 bg-rkCream/95 backdrop-blur-sm border-b border-rkLine font-rkSans text-rkInk">
-      {/* Utility row: everything the storefront already offered, restyled minimal */}
-      <div className="hidden lg:flex items-center justify-end gap-4 px-6 lg:px-10 h-7 text-[10px] uppercase tracking-widest border-b border-rkLine/70 text-rkInkSoft">
-        <button
-          onClick={() => setIsStylistOpen(true)}
-          className="flex items-center gap-1.5 hover:text-rkInk transition-colors"
-        >
-          <i className="fa-solid fa-wand-magic-sparkles"></i>
-          <span>AI Stylist</span>
-        </button>
-        <button
-          onClick={() => setIsSpinWheelOpen(true)}
-          className="flex items-center gap-1.5 hover:text-rkInk transition-colors"
-        >
-          <i className="fa-solid fa-dharmachakra"></i>
-          <span>Spin &amp; Win</span>
-        </button>
-        <div
-          onClick={() => setIsProfileOpen(true)}
-          className="flex items-center gap-1.5 cursor-pointer hover:text-rkInk transition-colors"
-        >
-          <i className={`fa-solid ${loyaltyTier.icon}`}></i>
-          <span>{insiderPoints} Pts &middot; {loyaltyTier.name}</span>
-        </div>
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          className="bg-transparent outline-none cursor-pointer tracking-widest"
-        >
-          {Object.keys(CURRENCIES).map((curr) => (
-            <option key={curr} value={curr}>{curr}</option>
-          ))}
-        </select>
-        <button onClick={() => setIsDarkMode(!isDarkMode)} className="hover:text-rkInk transition-colors">
-          <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
-        </button>
-        {!isAdminLoggedIn && (
-          <button onClick={() => setIsLoginOpen(true)} className="hover:text-rkInk transition-colors">
-            Admin Login
-          </button>
-        )}
-      </div>
-
       {/* Main nav row */}
       <div className="px-5 lg:px-10 h-14 flex items-center justify-between gap-4">
         <button

@@ -100,8 +100,8 @@ export default function ProductCard({
       </div>
 
       <div className="pt-3 flex flex-col flex-grow">
-        <h4 className="font-serif text-sm font-semibold truncate">{product.brand}</h4>
-        <p className="text-[11px] text-rkInkSoft truncate mb-1.5">{product.title}</p>
+        <p className="text-[10px] uppercase tracking-wide text-rkInkSoft truncate">{product.brand}</p>
+        <h4 className="font-serif text-sm font-semibold text-rkInk truncate mb-1.5">{product.title}</h4>
 
         <div className="flex items-center gap-2 text-xs">
           <span className="font-semibold">{formatPrice(product.price)}</span>

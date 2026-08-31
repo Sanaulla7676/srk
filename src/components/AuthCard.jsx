@@ -8,47 +8,18 @@ const EASE = [0.22, 1, 0.36, 1];
  * the dark form panel swap sides on toggle — that slide is the signature
  * move from the reference animation.
  *
+ * AuthAccentCopy/AuthFormFields are top-level components (not defined
+ * inside AuthCard) on purpose: defining a component inside another
+ * component's body gives it a new identity every render, which makes
+ * React tear down and rebuild the whole subtree (losing input focus,
+ * mid-typing) on every keystroke. Keeping them stable top-level
+ * components is what actually fixes that.
+ *
  * Pass `allowSignUp={false}` for admin-only contexts (no public signup).
  */
-export default function AuthCard({
-  brandLine = 'Shri R.K. Fashions',
-  allowSignUp = true,
-  onSignIn,
-  onSignUp
-}) {
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const switchMode = (next) => {
-    setError('');
-    setIsSignUp(next);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    try {
-      if (isSignUp) await onSignUp(name, email, password);
-      else await onSignIn(email, password);
-    } catch (err) {
-      setError(
-        err?.code === 'auth/email-already-in-use'
-          ? 'An account with that email already exists — try signing in instead.'
-          : err?.code === 'auth/weak-password'
-          ? 'Password should be at least 6 characters.'
-          : 'Invalid email or password.'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const AccentCopy = () => (
+function AuthAccentCopy({ isSignUp, allowSignUp, onToggle }) {
+  return (
     <AnimatePresence mode="wait">
       <motion.div
         key={isSignUp ? 'signup-copy' : 'signin-copy'}
@@ -83,7 +54,7 @@ export default function AuthCard({
         {allowSignUp && (
           <button
             type="button"
-            onClick={() => switchMode(!isSignUp)}
+            onClick={onToggle}
             className="mt-6 inline-flex items-center gap-2 border border-rkNight/40 hover:border-rkNight text-rkNight text-[11px] font-bold tracking-[0.15em] uppercase px-5 py-2.5 rounded-full transition-colors"
           >
             {isSignUp ? 'Sign In' : 'Create Account'}
@@ -92,12 +63,28 @@ export default function AuthCard({
       </motion.div>
     </AnimatePresence>
   );
+}
 
-  const FormFields = () => (
+function AuthFormFields({
+  isSignUp,
+  allowSignUp,
+  brandLine,
+  name,
+  setName,
+  email,
+  setEmail,
+  password,
+  setPassword,
+  error,
+  isSubmitting,
+  onSubmit,
+  onToggle
+}) {
+  return (
     <AnimatePresence mode="wait">
       <motion.form
         key={isSignUp ? 'signup-form' : 'signin-form'}
-        onSubmit={handleSubmit}
+        onSubmit={onSubmit}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
@@ -127,7 +114,6 @@ export default function AuthCard({
           <input
             type="email"
             required
-            autoFocus={!isSignUp}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-white/5 border border-white/15 focus:border-rkTan rounded-lg px-3 py-2.5 text-sm text-white outline-none transition-colors"
@@ -157,11 +143,7 @@ export default function AuthCard({
         {allowSignUp && (
           <p className="text-center text-[11px] text-white/40">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button
-              type="button"
-              onClick={() => switchMode(!isSignUp)}
-              className="text-rkTan font-semibold hover:underline"
-            >
+            <button type="button" onClick={onToggle} className="text-rkTan font-semibold hover:underline">
               {isSignUp ? 'Sign In' : 'Create Account'}
             </button>
           </p>
@@ -169,16 +151,71 @@ export default function AuthCard({
       </motion.form>
     </AnimatePresence>
   );
+}
+
+export default function AuthCard({
+  brandLine = 'Shri R.K. Fashions',
+  allowSignUp = true,
+  onSignIn,
+  onSignUp
+}) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleToggle = () => {
+    setError('');
+    setIsSignUp((v) => !v);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      if (isSignUp) await onSignUp(name, email, password);
+      else await onSignIn(email, password);
+    } catch (err) {
+      setError(
+        err?.code === 'auth/email-already-in-use'
+          ? 'An account with that email already exists — try signing in instead.'
+          : err?.code === 'auth/weak-password'
+          ? 'Password should be at least 6 characters.'
+          : 'Invalid email or password.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formProps = {
+    isSignUp,
+    allowSignUp,
+    brandLine,
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    isSubmitting,
+    onSubmit: handleSubmit,
+    onToggle: handleToggle
+  };
 
   return (
     <div className="relative w-full max-w-3xl mx-auto rounded-2xl shadow-2xl overflow-hidden bg-rkNight" style={{ height: 560 }}>
       {/* Mobile: stacked, no diagonal */}
       <div className="sm:hidden h-full flex flex-col">
         <div className="bg-gradient-to-br from-rkTan to-rkGold flex items-center justify-center py-8">
-          <AccentCopy />
+          <AuthAccentCopy isSignUp={isSignUp} allowSignUp={allowSignUp} onToggle={handleToggle} />
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
-          <FormFields />
+          <AuthFormFields {...formProps} />
         </div>
       </div>
 
@@ -189,7 +226,7 @@ export default function AuthCard({
           animate={{ left: isSignUp ? '50%' : '0%' }}
           transition={{ duration: 0.7, ease: EASE }}
         >
-          <FormFields />
+          <AuthFormFields {...formProps} />
         </motion.div>
 
         <motion.div
@@ -202,7 +239,7 @@ export default function AuthCard({
               : 'polygon(12% 0, 100% 0, 100% 100%, 0 100%)'
           }}
         >
-          <AccentCopy />
+          <AuthAccentCopy isSignUp={isSignUp} allowSignUp={allowSignUp} onToggle={handleToggle} />
         </motion.div>
       </div>
     </div>

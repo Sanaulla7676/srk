@@ -53,6 +53,14 @@ service cloud.firestore {
       allow read: if isOwner();
     }
 
+    // Site-wide settings (currently just the storefront theme preset):
+    // everyone needs to read it to render the site in the right theme,
+    // only the store owner can change it.
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
     // Everything else stays closed by default.
     match /{document=**} {
       allow read, write: if false;

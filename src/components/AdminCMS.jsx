@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import MediaUploader from './MediaUploader';
+import EditProductModal from './EditProductModal';
+import RevenueWaveChart from './RevenueWaveChart';
 import { adminSignOut } from '../firebase';
 
 export default function AdminCMS({
@@ -14,6 +16,7 @@ export default function AdminCMS({
   addAuditLog,
   upsertDoc,
   deleteDocById,
+  siteTheme,
   lowStockProducts,
   adminTab,
   setAdminTab,
@@ -33,6 +36,9 @@ export default function AdminCMS({
   const [newProdOldPrice, setNewProdOldPrice] = useState('');
   const [newProdStock, setNewProdStock] = useState('5');
   const [newProdImg, setNewProdImg] = useState('');
+  const [newProdDescription, setNewProdDescription] = useState('');
+
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
@@ -114,16 +120,19 @@ export default function AdminCMS({
   };
 
   return (
-    <main className="flex-grow bg-gray-100 dark:bg-darkBg p-6 lg:p-10 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-300 dark:border-darkBorder pb-5 mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold font-serif flex items-center gap-2">
-            <i className="fa-solid fa-chart-line text-brandPink"></i>
-            <span>Shri R.K. Fashions Executive Owner Dashboard</span>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Dedicated Admin Portal • Direct Phone Media Uploads (Cloudinary) & Realtime Firebase Sync
-          </p>
+    <main className="flex-grow bg-gradient-to-br from-[#F7F4EF] to-gray-100 dark:bg-darkBg p-6 lg:p-10 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 mb-6 border-b-2 border-brandGold/40">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center leading-none shrink-0">
+            <span className="font-rkScript text-sm text-brandGold -mb-1">Shri</span>
+            <span className="font-serif text-2xl font-black tracking-tight">RK</span>
+          </div>
+          <div className="border-l border-gray-300 dark:border-darkBorder pl-3">
+            <h1 className="text-lg font-extrabold font-serif tracking-tight">Executive Owner Dashboard</h1>
+            <p className="text-[11px] text-gray-500 mt-0.5">
+              Direct Phone Media Uploads (Cloudinary) &amp; Realtime Firebase Sync
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
@@ -137,9 +146,9 @@ export default function AdminCMS({
                 window.location.href = '/';
               });
             }}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded shadow transition-all"
+            className="bg-gray-900 hover:bg-black text-brandGold border border-brandGold/50 font-bold text-xs px-4 py-2 rounded-full shadow transition-all"
           >
-            Logout & Exit Admin
+            Logout &amp; Exit Admin
           </button>
         </div>
       </div>
@@ -168,7 +177,7 @@ export default function AdminCMS({
       )}
 
       {/* ADMIN TAB NAVIGATION */}
-      <div className="flex gap-2 mb-6 border-b border-gray-300 dark:border-darkBorder pb-2 overflow-x-auto">
+      <div className="flex gap-2 mb-6 pb-1 overflow-x-auto">
         {[
           { id: 'analytics', label: 'Analytics', icon: 'fa-chart-line' },
           { id: 'orders', label: 'Orders & Pipeline', icon: 'fa-shopping-cart' },
@@ -182,10 +191,10 @@ export default function AdminCMS({
           <button
             key={tab.id}
             onClick={() => setAdminTab(tab.id)}
-            className={`px-4 py-2 text-xs font-bold rounded flex items-center gap-2 transition-all ${
+            className={`shrink-0 px-4 py-2.5 text-xs font-bold rounded-full flex items-center gap-2 transition-all ${
               adminTab === tab.id
-                ? 'bg-brandPink text-white shadow-sm'
-                : 'bg-white dark:bg-darkCard text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-darkBorder'
+                ? 'bg-gray-900 text-brandGold shadow-md'
+                : 'bg-white dark:bg-darkCard text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-darkBorder hover:border-brandGold/50'
             }`}
           >
             <i className={`fa-solid ${tab.icon}`}></i>
@@ -218,18 +227,7 @@ export default function AdminCMS({
             {analytics.byDay.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-8">No orders yet — revenue will chart here once sales start.</p>
             ) : (
-              <div className="flex items-end gap-2 h-48">
-                {analytics.byDay.map((d) => (
-                  <div key={d.date} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5" title={`${d.date}: ${formatPrice(d.revenue)}`}>
-                    <span className="text-[9px] font-bold text-gray-500">{formatPrice(d.revenue)}</span>
-                    <div
-                      className="w-full bg-brandPink rounded-t"
-                      style={{ height: `${Math.max(4, (d.revenue / analytics.maxDayRevenue) * 100)}%` }}
-                    ></div>
-                    <span className="text-[9px] text-gray-400">{d.date}</span>
-                  </div>
-                ))}
-              </div>
+              <RevenueWaveChart byDay={analytics.byDay} maxDayRevenue={analytics.maxDayRevenue} formatPrice={formatPrice} />
             )}
           </div>
 
@@ -373,6 +371,14 @@ export default function AdminCMS({
               />
             </div>
 
+            <textarea
+              value={newProdDescription}
+              onChange={(e) => setNewProdDescription(e.target.value)}
+              rows={3}
+              placeholder="Full description — fabric details, fit, care instructions, occasion, etc."
+              className="w-full p-2.5 border rounded bg-transparent border-gray-300 dark:border-gray-700 mb-4"
+            />
+
             {/* DIRECT MEDIA UPLOADER FROM PHONE OR COMPUTER */}
             <div className="mb-4">
               <MediaUploader
@@ -392,13 +398,15 @@ export default function AdminCMS({
                   newProdPrice,
                   newProdOldPrice,
                   newProdStock,
-                  newProdImg
+                  newProdImg,
+                  newProdDescription
                 );
                 setNewProdBrand('');
                 setNewProdTitle('');
                 setNewProdPrice('');
                 setNewProdOldPrice('');
                 setNewProdImg('');
+                setNewProdDescription('');
               }}
               className="bg-brandPink hover:bg-brandPinkHover text-white font-bold text-xs px-8 py-3 rounded shadow uppercase tracking-wider"
             >
@@ -450,7 +458,13 @@ export default function AdminCMS({
                         </div>
                       </td>
                       <td className="p-3 font-bold">{formatPrice(p.price)}</td>
-                      <td className="p-3">
+                      <td className="p-3 flex gap-2">
+                        <button
+                          onClick={() => setEditingProduct(p)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-2.5 py-1 rounded"
+                        >
+                          <i className="fa-solid fa-pen"></i> Edit
+                        </button>
                         <button
                           onClick={() => {
                             deleteDocById('products', p.id);
@@ -734,6 +748,48 @@ export default function AdminCMS({
       {adminTab === 'settings' && (
         <div className="space-y-6 max-w-2xl">
 
+          {/* STOREFRONT THEME */}
+          <div className="bg-white dark:bg-darkCard p-6 rounded-lg border border-gray-200 dark:border-darkBorder shadow-sm">
+            <h3 className="text-sm font-extrabold uppercase mb-1 flex items-center gap-2">
+              <i className="fa-solid fa-palette text-purple-500"></i>
+              Storefront Theme
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Pick a look for the storefront — it updates instantly for every visitor, no redeploy needed.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { id: 'default', label: 'Cream & Gold', swatches: ['#F3EBDE', '#B8935F', '#221D18'] },
+                { id: 'midnight', label: 'Midnight', swatches: ['#1A1613', '#D8AF92', '#F0E9DE'] },
+                { id: 'blush', label: 'Blush & Rose', swatches: ['#FAEBEB', '#C77080', '#2B181E'] }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    upsertDoc('settings', 'site', { theme: t.id });
+                    addAuditLog('Storefront Theme Changed', `Switched theme to '${t.label}'`);
+                    showToast(`Theme set to ${t.label}!`);
+                  }}
+                  className={`p-3 rounded-lg border-2 text-left transition-all ${
+                    (siteTheme || 'default') === t.id
+                      ? 'border-brandPink shadow-sm'
+                      : 'border-gray-200 dark:border-darkBorder hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex gap-1 mb-2">
+                    {t.swatches.map((c) => (
+                      <span key={c} className="w-6 h-6 rounded-full border border-black/10" style={{ background: c }}></span>
+                    ))}
+                  </div>
+                  <p className="text-xs font-bold flex items-center gap-1.5">
+                    {t.label}
+                    {(siteTheme || 'default') === t.id && <i className="fa-solid fa-circle-check text-brandPink"></i>}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* CLOUDINARY CONFIG */}
           <div className="bg-white dark:bg-darkCard p-6 rounded-lg border border-gray-200 dark:border-darkBorder shadow-sm">
             <h3 className="text-sm font-extrabold uppercase mb-1 flex items-center gap-2">
@@ -842,6 +898,20 @@ export default function AdminCMS({
             </button>
           </div>
         </div>
+      )}
+
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          categories={categories}
+          onClose={() => setEditingProduct(null)}
+          onSave={(updated) => {
+            upsertDoc('products', updated.id, updated);
+            addAuditLog('Product Updated', `Updated '${updated.brand} - ${updated.title}'`);
+            showToast('Product Updated!');
+            setEditingProduct(null);
+          }}
+        />
       )}
     </main>
   );
